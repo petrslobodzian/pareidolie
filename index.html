@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Pareidolia Lab</title>
+<title>Pareidolia Lab – Clouds</title>
 <style>
   :root {
     --bg: #0d0f12;
@@ -25,7 +25,7 @@
     border-right: 1px solid #1f2230; display: flex; flex-direction: column; gap: 12px;
   }
   main { position: relative; display: grid; place-items: center; }
-  #canvas { width: 100%; height: 100%; display: block; background: #000; }
+  #canvas { width: 100%; height: 100%; display: block; background: transparent; }
   .row { display: flex; align-items: center; gap: 8px; }
   .col { display: flex; flex-direction: column; gap: 8px; }
   label { font-weight: 600; }
@@ -257,7 +257,7 @@ function drawFaceHint(ctx, cx, cy, size, rot, alpha, seedRand) {
   drawBlob( eyeOffset, 0, eyeR * (0.9 + seedRand()*0.2));
 
   // Mouth: shallow dark arc
-  ctx.strokeStyle = "rgba(0,0,0,0.28)";
+  ctx.strokeStyle = "rgba(255,255,255,0.28)";
   ctx.lineWidth = Math.max(1, size*0.06);
   ctx.beginPath();
   const curve = size * (0.08 + seedRand()*0.06);
@@ -378,23 +378,39 @@ function renderFrame(dt) {
 
   t += dt * speed * 0.0005;
 
-  // Draw base fBM noise to offscreen
+    // Draw base fBM noise to offscreen (compute cloudiness + colorize to sky)
   const img = offCtx.createImageData(W, H);
   let i = 0;
   for (let y=0; y<H; y++) {
+    // vertical sky gradient (darker zenith at top, lighter near horizon)
+    const gy = y / (H - 1 || 1);
+    const skyTop = [100, 160, 210];   // rgb at top
+    const skyBot = [170, 220, 250];   // rgb at bottom
+    const skyR = Math.round(lerp(skyTop[0], skyBot[0], gy));
+    const skyG = Math.round(lerp(skyTop[1], skyBot[1], gy));
+    const skyB = Math.round(lerp(skyTop[2], skyBot[2], gy));
+
     for (let x=0; x<W; x++) {
       const nx = x/scale + t*0.8;
       const ny = y/scale + t*0.6;
-      let v = fbm(perlin, nx, ny, oct, 2.0, 0.5); // [-1,1]
-      v = (v + 1) * 0.5; // [0,1]
-      // contrast
+
+      // base fBM in [-1,1] -> [0,1]
+      let v = fbm(perlin, nx, ny, oct, 2.0, 0.5);
+      v = (v + 1) * 0.5;
+
+      // emphasize puffy clouds: raise to a power after contrast
       const m = 0.5;
       v = clamp((v - m) * contrast + m, 0, 1);
+      const cloud = Math.pow(v, 2.2); // tune softness
 
-      const c = Math.floor(v * 255);
-      img.data[i++] = c;
-      img.data[i++] = c;
-      img.data[i++] = c;
+      // mix sky -> cloud (white)
+      const r = Math.round(lerp(skyR, 255, cloud));
+      const g = Math.round(lerp(skyG, 255, cloud));
+      const b = Math.round(lerp(skyB, 255, cloud));
+
+      img.data[i++] = r;
+      img.data[i++] = g;
+      img.data[i++] = b;
       img.data[i++] = 255;
     }
   }
