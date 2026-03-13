@@ -2,68 +2,47 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Pareidolia Lab — Firefly Swirl (Tabs, God‑rays, Micro‑detail)</title>
+<title>Pareidolia Lab — Firefly Swirl (Bloom + LUT + Parallax + Annotations)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-<!-- ==============================
-     DARK GLASS + TABBED UI STYLES
-     ============================== -->
 <style>
   :root{
     --bg: #0a0d14;
-    --panel: rgba(16,20,32,0.60);
-    --glass: rgba(22,26,40,0.55);
+    --panel: rgba(18,22,35,0.58);
     --border: rgba(255,255,255,0.08);
     --text: #e9eef6;
     --muted: #a7b4c8;
     --accent: #77e1ff;
-    --warm: #ffb86b;
+    --accent-2: #ffb86b;
     --danger: #ff6b8a;
-    --ok: #79e08f;
   }
-  html,body{height:100%;margin:0;background:var(--bg);color:var(--text);
-    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Inter,Arial}
-  /* Fullscreen canvases */
+  html,body{height:100%;margin:0;background:var(--bg);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Inter,Arial}
   #gl{position:absolute;inset:0;width:100%;height:100%;display:block;}
-  #ann{position:absolute;inset:0;width:100%;height:100%;pointer-events:auto;display:block;}
+  #ann{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:auto;}
 
-  /* Panel container */
+  /* Panel */
   #ui{
-    position:absolute;top:20px;left:20px;width:380px;max-width:calc(100vw - 40px);
-    background:var(--glass);backdrop-filter:blur(20px) saturate(140%);
-    border:1px solid var(--border);border-radius:16px;box-shadow:0 12px 50px rgba(0,0,0,0.4);
-    overflow:hidden;
+    position:absolute;top:20px;left:20px;width:340px;padding:18px 16px 16px;border-radius:16px;
+    background:var(--panel);backdrop-filter:blur(20px) saturate(140%);border:1px solid var(--border);
+    color:var(--text);box-shadow:0 10px 45px rgba(0,0,0,0.35);
   }
-  .ui-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
-  .ui-title{font-size:16px;font-weight:700;letter-spacing:.2px}
-  .badge{font-size:11px;padding:2px 8px;border-radius:999px;background:#10233a;color:#cdefff;border:1px solid #1f3d5f}
-
-  /* Tabs */
-  .tabs{display:flex;gap:6px;padding:8px;border-bottom:1px solid var(--border);overflow:auto}
-  .tab-btn{flex:1;min-width:0;padding:8px 10px;border-radius:10px;border:1px solid var(--border);
-    background:linear-gradient(180deg,#101624,#0d1220);color:#cfe2ff;cursor:pointer;font-size:12px;white-space:nowrap}
-  .tab-btn.active{background:linear-gradient(180deg,#152543,#0e1a30);border-color:#264d7d;box-shadow:0 4px 16px rgba(16,120,255,0.15)}
-
-  /* Tab panels */
-  .panel{display:none;max-height:65vh;overflow:auto;padding:12px 14px}
-  .panel.active{display:block}
-  .section{margin-bottom:14px;padding:10px;border:1px solid var(--border);border-radius:12px;background:rgba(10,12,18,0.35)}
-  .section h3{margin:0 0 10px;font-size:13px;color:#cfe2ff}
-  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-  .row{display:flex;align-items:center;gap:8px}
-  label{display:flex;justify-content:space-between;font-size:12px;color:#cfe2ff;margin-bottom:4px}
+  #ui h1{margin:0 0 6px;font-size:18px;font-weight:700;letter-spacing:.2px}
+  #ui p{margin:0 0 10px;color:var(--muted);font-size:13px}
+  .row{display:flex;gap:8px;align-items:center}
+  .col{display:flex;flex-direction:column;gap:10px}
+  label{font-size:12px;color:#cfe2ff;display:flex;justify-content:space-between}
   .sub{color:var(--muted)}
   input[type=range]{width:100%}
-  input[type=text]{width:100%;padding:8px;border-radius:10px;border:1px solid var(--border);
-    background:rgba(18,22,35,0.6);color:var(--text)}
-  select,button{width:100%;padding:8px 10px;border-radius:10px;border:1px solid var(--border);
-    background:rgba(18,22,35,0.7);color:var(--text);cursor:pointer}
+  select,button{
+    width:100%;padding:8px 10px;border-radius:10px;border:1px solid var(--border);
+    background:rgba(18,22,35,0.7);color:var(--text);cursor:pointer
+  }
   button.primary{background:linear-gradient(180deg,#102036,#0d1524);border-color:#1f3558}
   button.warn{background:linear-gradient(180deg,#2b1117,#1a0a0e);border-color:#3a1a24;color:#ffc2cf}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .kbd{border:1px solid var(--border);border-radius:6px;padding:1px 6px;color:var(--muted);font-size:11px}
+  .divider{height:1px;background:var(--border);margin:10px 0 2px}
 
-  /* Small footer hint */
+  /* Annotation hint */
   #hint{
     position:absolute;left:20px;bottom:20px;padding:10px 12px;border-radius:12px;
     background:rgba(15,17,26,0.6);border:1px solid var(--border);color:#cfe2ff;font-size:12px;
@@ -72,274 +51,107 @@
 
   @media (max-width:900px){
     #ui{width:calc(100% - 40px)}
-    .panel{max-height:50vh}
   }
 </style>
 </head>
-
 <body>
-<!-- =============================
-     RENDER + ANNOTATION CANVASES
-     ============================= -->
 <canvas id="gl"></canvas>
 <canvas id="ann"></canvas>
 
-<!-- =============================
-     DARK GLASS TABBED CONTROL UI
-     ============================= -->
+<!-- Control Panel -->
 <div id="ui" role="region" aria-label="Controls">
-  <div class="ui-header">
-    <div class="ui-title">Pareidolia Lab · Firefly Swirl</div>
-    <div class="badge">volumetric · hybrid</div>
-  </div>
+  <h1>Pareidolia Lab · Firefly Swirl</h1>
+  <p>Volumetric swirling clouds with bloom, LUTs, parallax & annotations.</p>
 
-  <!-- Tabs -->
-  <div class="tabs" role="tablist" aria-label="Control tabs">
-    <button class="tab-btn active" data-tab="clouds" role="tab" aria-selected="true">Clouds</button>
-    <button class="tab-btn" data-tab="aesthetics" role="tab">Aesthetics</button>
-    <button class="tab-btn" data-tab="camera" role="tab">Camera & Motion</button>
-    <button class="tab-btn" data-tab="ann" role="tab">Annotations & Export</button>
-  </div>
+  <div class="col">
+    <div>
+      <label>Swirl Strength <span class="sub" id="v-swirl">1.20</span></label>
+      <input type="range" id="swirl" min="0" max="2" step="0.01" value="1.20" />
+    </div>
+    <div>
+      <label>Cloud Density <span class="sub" id="v-density">1.00</span></label>
+      <input type="range" id="density" min="0.1" max="2" step="0.01" value="1.00" />
+    </div>
+    <div>
+      <label>Light Intensity <span class="sub" id="v-light">1.30</span></label>
+      <input type="range" id="light" min="0" max="2" step="0.01" value="1.30" />
+    </div>
+    <div>
+      <label>Warmth <span class="sub" id="v-warm">0.65</span></label>
+      <input type="range" id="warm" min="0" max="1" step="0.01" value="0.65" />
+    </div>
+    <div>
+      <label>Pareidolia Bias <span class="sub" id="v-bias">0.25</span></label>
+      <input type="range" id="bias" min="0" max="1" step="0.01" value="0.25" />
+    </div>
 
-  <!-- Panels -->
-  <div id="panel-clouds" class="panel active" role="tabpanel" aria-labelledby="clouds">
-    <div class="section">
-      <h3>Randomness</h3>
-      <div class="grid-2">
-        <div>
-          <label>Seed <span class="sub">(share via ?seed=...)</span></label>
-          <div class="row">
-            <input type="text" id="seed" placeholder="e.g., firefly-owl-42" />
-            <button id="seedRand">🎲</button>
-          </div>
-        </div>
-        <div>
-          <label>Raw / Biased</label>
-          <select id="rawMode">
-            <option value="0" selected>Biased (pareidolia hints)</option>
-            <option value="1">Raw (no hints)</option>
-          </select>
-        </div>
+    <div class="divider"></div>
+
+    <div>
+      <label>Bloom Strength <span class="sub" id="v-bloom">0.85</span></label>
+      <input type="range" id="bloom" min="0" max="2" step="0.01" value="0.85" />
+    </div>
+    <div>
+      <label>Bloom Threshold <span class="sub" id="v-thresh">0.75</span></label>
+      <input type="range" id="threshold" min="0" max="1" step="0.01" value="0.75" />
+    </div>
+
+    <div>
+      <label>Parallax Amount <span class="sub" id="v-parallax">0.30</span></label>
+      <input type="range" id="parallax" min="0" max="1" step="0.01" value="0.30" />
+    </div>
+
+    <div class="grid">
+      <div>
+        <label for="lut">Color LUT</label>
+        <select id="lut">
+          <option value="0">Neutral</option>
+          <option value="1" selected>Firefly Warm</option>
+          <option value="2">Teal-Orange Film</option>
+          <option value="3">Indigo Twilight</option>
+        </select>
+      </div>
+      <div>
+        <label for="quality">Quality</label>
+        <select id="quality">
+          <option value="0">Fast</option>
+          <option value="1" selected>Balanced</option>
+          <option value="2">High</option>
+        </select>
       </div>
     </div>
 
-    <div class="section">
-      <h3>Structure</h3>
-      <div class="grid-2">
-        <div>
-          <label>Swirl Strength <span id="v-swirl" class="sub">1.20</span></label>
-          <input type="range" id="swirl" min="0" max="2" step="0.01" value="1.20" />
-        </div>
-        <div>
-          <label>Cloud Density <span id="v-density" class="sub">1.00</span></label>
-          <input type="range" id="density" min="0.1" max="2" step="0.01" value="1.00" />
-        </div>
-        <div>
-          <label>Noise Scale <span id="v-scale" class="sub">1.60</span></label>
-          <input type="range" id="scale" min="0.5" max="4" step="0.01" value="1.60" />
-        </div>
-        <div>
-          <label>Octaves <span id="v-oct" class="sub">5</span></label>
-          <input type="range" id="oct" min="1" max="8" step="1" value="5" />
-        </div>
-        <div>
-          <label>Contrast <span id="v-contrast" class="sub">1.20</span></label>
-          <input type="range" id="contrast" min="0.5" max="3" step="0.01" value="1.20" />
-        </div>
-        <div>
-          <label>Micro‑detail <span id="v-micro" class="sub">0.45</span></label>
-          <input type="range" id="micro" min="0" max="1" step="0.01" value="0.45" />
-        </div>
-        <div>
-          <label>Layer Depth (parallax) <span id="v-depth" class="sub">0.65</span></label>
-          <input type="range" id="depth" min="0" max="1" step="0.01" value="0.65" />
-        </div>
-        <div>
-          <label>God‑rays (strength) <span id="v-rays" class="sub">0.70</span></label>
-          <input type="range" id="rays" min="0" max="2" step="0.01" value="0.70" />
-        </div>
-        <div>
-          <label>Pareidolia Bias <span id="v-bias" class="sub">0.25</span></label>
-          <input type="range" id="bias" min="0" max="1" step="0.01" value="0.25" />
-        </div>
-        <div>
-          <label>Quality (ray steps)</label>
-          <select id="quality">
-            <option value="0">Fast</option>
-            <option value="1" selected>Balanced</option>
-            <option value="2">High</option>
-          </select>
-        </div>
-      </div>
+    <div class="grid">
+      <button id="toggle" class="primary">Pause</button>
+      <button id="shot" class="primary">Screenshot ⌘S</button>
+    </div>
+    <div class="grid">
+      <button id="clear" class="warn">Clear Annotations</button>
+      <button id="export" class="primary">Export JSON</button>
     </div>
 
-    <div class="section">
-      <h3>Timing</h3>
-      <div class="grid-3">
-        <div>
-          <label>Speed (global) <span id="v-speed" class="sub">1.00</span></label>
-          <input type="range" id="speed" min="0" max="3" step="0.01" value="1.00" />
-        </div>
-        <div>
-          <label>Animate</label>
-          <select id="animate">
-            <option value="1" selected>On</option>
-            <option value="0">Off</option>
-          </select>
-        </div>
-        <div>
-          <label>Play / Pause</label>
-          <button id="toggle" class="primary">Pause (Space)</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div id="panel-aesthetics" class="panel" role="tabpanel" aria-labelledby="aesthetics">
-    <div class="section">
-      <h3>Color & Light</h3>
-      <div class="grid-2">
-        <div>
-          <label>Warmth <span id="v-warm" class="sub">0.65</span></label>
-          <input type="range" id="warm" min="0" max="1" step="0.01" value="0.65" />
-        </div>
-        <div>
-          <label>LUT</label>
-          <select id="lut">
-            <option value="0">Neutral</option>
-            <option value="1" selected>Firefly Warm</option>
-            <option value="2">Teal‑Orange Film</option>
-            <option value="3">Indigo Twilight</option>
-          </select>
-        </div>
-        <div>
-          <label>Bloom Strength <span id="v-bloom" class="sub">0.85</span></label>
-          <input type="range" id="bloom" min="0" max="2" step="0.01" value="0.85" />
-        </div>
-        <div>
-          <label>Bloom Threshold <span id="v-thresh" class="sub">0.75</span></label>
-          <input type="range" id="threshold" min="0" max="1" step="0.01" value="0.75" />
-        </div>
-        <div>
-          <label>Filmic Intensity <span id="v-film" class="sub">1.00</span></label>
-          <input type="range" id="filmic" min="0" max="1.5" step="0.01" value="1.00" />
-        </div>
-        <div>
-          <label>Saturation <span id="v-sat" class="sub">1.00</span></label>
-          <input type="range" id="sat" min="0" max="2" step="0.01" value="1.00" />
-        </div>
-        <div>
-          <label>Vibrance <span id="v-vib" class="sub">0.20</span></label>
-          <input type="range" id="vib" min="0" max="1" step="0.01" value="0.20" />
-        </div>
-        <div>
-          <label>Vignette <span id="v-vig" class="sub">0.25</span></label>
-          <input type="range" id="vignette" min="0" max="1" step="0.01" value="0.25" />
-        </div>
-        <div>
-          <label>Micro‑grain <span id="v-grain" class="sub">0.08</span></label>
-          <input type="range" id="grain" min="0" max="0.5" step="0.01" value="0.08" />
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div id="panel-camera" class="panel" role="tabpanel" aria-labelledby="camera">
-    <div class="section">
-      <h3>Motion & Parallax</h3>
-      <div class="grid-2">
-        <div>
-          <label>Parallax Amount <span id="v-parallax" class="sub">0.30</span></label>
-          <input type="range" id="parallax" min="0" max="1" step="0.01" value="0.30" />
-        </div>
-        <div>
-          <label>Tilt Smoothing <span id="v-tilt" class="sub">0.08</span></label>
-          <input type="range" id="tiltSmooth" min="0.01" max="0.3" step="0.01" value="0.08" />
-        </div>
-        <div>
-          <label>Camera Depth <span id="v-camz" class="sub">-2.50</span></label>
-          <input type="range" id="camZ" min="-5" max="-1" step="0.01" value="-2.50" />
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div id="panel-ann" class="panel" role="tabpanel" aria-labelledby="ann">
-    <div class="section">
-      <h3>Annotations & Export</h3>
-      <div class="grid-2">
-        <button id="shot" class="primary">Screenshot (⌘/Ctrl+S)</button>
-        <button id="clear" class="warn">Clear Annotations</button>
-        <button id="export" class="primary">Export Annotations JSON</button>
-        <button id="import" class="primary">Import Annotations JSON</button>
-      </div>
-      <p class="sub" style="margin-top:10px">
-        Drag on canvas to create a box; after releasing, enter a label. Data is saved to <code>localStorage</code>.
-      </p>
-    </div>
+    <p class="sub">Tips: drag on canvas to annotate (<span class="kbd">Enter</span> to label). Move mouse for parallax. <span class="kbd">Space</span> play/pause.</p>
   </div>
 </div>
 
-<div id="hint">
-  Tips: <span class="kbd">Space</span> play/pause · <span class="kbd">R</span> raw/biased ·
-  <span class="kbd">B</span> toggle bias visibility · Move mouse for parallax
-</div>
+<div id="hint">Annotations saved in your browser (per seedless session).</div>
 
-<!-- =============================
-     APPLICATION SCRIPT (READABLE)
-     ============================= -->
 <script>
-/* ========================================================================
-   STATE, UI, AND UTILITIES
-   ======================================================================== */
+/* ============================================================
+   HYBRID WEBGL2 PIPELINE (single file):
+   1) Scene pass → offscreen texture (volumetric swirl clouds)
+   2) Bloom threshold + multi-pass separable blur (downscaled)
+   3) Composite: scene + bloom, tone map + LUT
+   4) Parallax via mouse tilt + multi-layer sampling
+   5) Annotation overlay on a 2D canvas, saved to localStorage
+============================================================ */
+
 const glCanvas = document.getElementById('gl');
 const annCanvas = document.getElementById('ann');
-const gl = glCanvas.getContext('webgl2', {antialias:false, preserveDrawingBuffer:true});
-if(!gl){ alert('WebGL2 not available in this browser.'); }
+const gl = glCanvas.getContext('webgl2', {antialias: false, preserveDrawingBuffer: true});
+if(!gl){ alert('WebGL2 not available'); }
 
-/* ---- Tabs ---- */
-document.querySelectorAll('.tab-btn').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
-  });
-});
-
-/* ---- Seed utilities (deterministic randomness) ---- */
-function hashStringToInt(str){
-  let h = 2166136261 >>> 0;
-  for (let i=0; i<str.length; i++){
-    h ^= str.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return h >>> 0;
-}
-function mulberry32(a){
-  return function(){
-    let t = a += 0x6D2B79F5;
-    t = Math.imul(t ^ t >>> 15, t | 1);
-    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-    return ((t ^ t >>> 14) >>> 0) / 4294967296;
-  };
-}
-function randomSeedString(){
-  const nouns = ['owl','cloud','rock','toast','tree','wave','smoke','stain','sky','dust'];
-  const adj = ['silent','lucky','odd','fuzzy','noisy','gentle','mystic','sleepy','weird','blur'];
-  const r = Math.floor(Math.random()*10);
-  return `${adj[r]}-${nouns[(r*7+3)%10]}-${Math.floor(Math.random()*1e6)}`;
-}
-
-/* ---- Settings storage ---- */
-const LS_SETTINGS = 'pareidolia:settings:v2';
-function saveSettings(){ localStorage.setItem(LS_SETTINGS, JSON.stringify(readUI())); }
-function loadSettings(){
-  try{ return JSON.parse(localStorage.getItem(LS_SETTINGS) || '{}'); }
-  catch{ return {}; }
-}
-
-/* ---- DPI-aware resize ---- */
+/* ---------- Resize ---------- */
 function resize(){
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   glCanvas.width = Math.floor(innerWidth * dpr);
@@ -349,143 +161,40 @@ function resize(){
   annCanvas.width = innerWidth;
   annCanvas.height = innerHeight;
 
-  initTargets(); // reallocate FBOs for new size
-  redrawAnns();
+  initTargets(); // reallocate FBOs
 }
 window.addEventListener('resize', resize);
 
-/* ---- UI element references ---- */
-const UI = {
-  seed: document.getElementById('seed'),
-  seedRand: document.getElementById('seedRand'),
-  rawMode: document.getElementById('rawMode'),
-
-  swirl: document.getElementById('swirl'),
-  density: document.getElementById('density'),
-  scale: document.getElementById('scale'),
-  oct: document.getElementById('oct'),
-  contrast: document.getElementById('contrast'),
-  micro: document.getElementById('micro'),
-  depth: document.getElementById('depth'),
-  rays: document.getElementById('rays'),
-  bias: document.getElementById('bias'),
-  quality: document.getElementById('quality'),
-
-  speed: document.getElementById('speed'),
-  animate: document.getElementById('animate'),
-  toggle: document.getElementById('toggle'),
-
-  warm: document.getElementById('warm'),
-  lut: document.getElementById('lut'),
-  bloom: document.getElementById('bloom'),
-  threshold: document.getElementById('threshold'),
-  filmic: document.getElementById('filmic'),
-  sat: document.getElementById('sat'),
-  vib: document.getElementById('vib'),
-  vignette: document.getElementById('vignette'),
-  grain: document.getElementById('grain'),
-
-  parallax: document.getElementById('parallax'),
-  tiltSmooth: document.getElementById('tiltSmooth'),
-  camZ: document.getElementById('camZ'),
-
-  shot: document.getElementById('shot'),
-  clear: document.getElementById('clear'),
-  export: document.getElementById('export'),
-  import: document.getElementById('import'),
-};
-
-/* ---- Sync value labels ---- */
-function syncLabels(){
-  const ids = ['swirl','density','scale','oct','contrast','micro','depth','rays','bias','speed',
-               'warm','bloom','threshold','filmic','sat','vib','vignette','grain',
-               'parallax','tiltSmooth','camZ'];
-  ids.forEach(id=>{
-    const el = document.getElementById(id);
-    const lab = document.getElementById('v-' + id.replace('camZ','camz'));
-    if(lab) lab.textContent = el.type==='range' ? (+el.value).toFixed( (el.step && el.step<1) ? 2 : 0 ) : el.value;
-  });
-}
-
-/* ---- Read/write UI ---- */
-function readUI(){
-  return {
-    seed: UI.seed.value, raw: +UI.rawMode.value,
-    swirl:+UI.swirl.value, density:+UI.density.value, scale:+UI.scale.value, oct:+UI.oct.value|0,
-    contrast:+UI.contrast.value, micro:+UI.micro.value, depth:+UI.depth.value, rays:+UI.rays.value,
-    bias:+UI.bias.value, quality:+UI.quality.value|0,
-    speed:+UI.speed.value, animate:+UI.animate.value|0,
-    warm:+UI.warm.value, lut:+UI.lut.value|0, bloom:+UI.bloom.value, threshold:+UI.threshold.value,
-    filmic:+UI.filmic.value, sat:+UI.sat.value, vib:+UI.vib.value, vignette:+UI.vignette.value, grain:+UI.grain.value,
-    parallax:+UI.parallax.value, tiltSmooth:+UI.tiltSmooth.value, camZ:+UI.camZ.value,
-  };
-}
-function writeUI(cfg){
-  Object.entries(cfg).forEach(([k,v])=>{
-    if (UI[k] && 'value' in UI[k]) UI[k].value = v;
-  });
-  syncLabels();
-}
-
-/* ---- Seed in URL ---- */
-function initSeedFromURL(){
-  const url = new URL(location.href);
-  const qs = url.searchParams.get('seed');
-  if (qs) UI.seed.value = qs;
-  else UI.seed.value = randomSeedString();
-}
-function updateURLSeed(){
-  const url = new URL(location.href);
-  url.searchParams.set('seed', UI.seed.value);
-  history.replaceState({}, '', url.toString());
-}
-
-/* ========================================================================
-   WEBGL PROGRAMS, FBOs, AND SHADERS
-   ======================================================================== */
-/* Vertex shader (fullscreen quad) */
+/* ---------- Shaders ---------- */
 const VERT = `#version 300 es
 precision highp float;
 layout(location=0) in vec2 pos;
 out vec2 vUV;
 void main(){
-  vUV = pos*0.5 + 0.5;
-  gl_Position = vec4(pos, 0, 1);
+  vUV = pos*0.5+0.5;
+  gl_Position = vec4(pos,0,1);
 }`;
 
-/* Scene fragment shader: volumetric clouds + micro-detail + god-rays */
 const SCENE_FRAG = `#version 300 es
 precision highp float;
 in vec2 vUV; out vec4 fragColor;
 
 uniform vec2  uRes;
-uniform float uTime;          // time (seconds)
-uniform float uSpeed;         // global time multiplier
-
+uniform float uTime;
 uniform float uSwirl;
 uniform float uDensity;
-uniform float uScale;
-uniform int   uOct;
-uniform float uContrast;
-uniform float uMicro;         // micro-detail mix
-uniform float uDepth;         // layer depth/parallax weight
-uniform float uRays;          // god-ray strength
-uniform float uBias;          // pareidolia bias
-uniform int   uRaw;           // 1=raw (no bias), 0=biased
-uniform int   uQuality;       // 0/1/2
-
+uniform float uLight;
 uniform float uWarm;
-uniform float uCamZ;
+uniform float uBias;
+uniform vec2  uTilt;       // mouse parallax [-1..1]
+uniform float uParallax;   // strength
+uniform int   uQuality;    // 0/1/2
 
-uniform vec2  uTilt;          // mouse tilt [-1..1]
-uniform float uParallax;      // parallax strength
-
-uniform vec3  uSeedVec;       // derived from seed for deterministic offsets
-
-/* ======= Utility noise functions ======= */
+/* ----- Hash / Noise ----- */
 vec3 hash3(vec3 p){
   p = fract(p * 0.3183099 + vec3(0.1,0.2,0.3));
-  p *= 17.0; return fract(vec3(p.x*p.y, p.y*p.z, p.z*p.x));
+  p *= 17.0;
+  return fract(vec3(p.x*p.y, p.y*p.z, p.z*p.x));
 }
 float noise(vec3 p){
   vec3 i=floor(p), f=fract(p);
@@ -501,15 +210,6 @@ float noise(vec3 p){
                dot(hash3(i+vec3(1,1,1)), f-vec3(1,1,1)), u.x), u.y), u.z);
   return n;
 }
-float fbm(vec3 p, float sc, int oct){
-  float a=0.5, f=1.0, s=0.0;
-  for(int i=0;i<8;i++){
-    if(i>=oct) break;
-    s += a * noise(p * f * sc);
-    f *= 2.02; a *= 0.5;
-  }
-  return s;
-}
 vec3 curl(vec3 p){
   float e=0.12;
   float nx=noise(p+vec3(0,e,0))-noise(p-vec3(0,e,0));
@@ -517,100 +217,57 @@ vec3 curl(vec3 p){
   float nz=noise(p+vec3(0,0,e))-noise(p-vec3(0,0,e));
   return normalize(vec3(nz-ny, nx-nz, ny-nx));
 }
-
-/* Pareidolia hint carved into density (eyes + mouth) */
 float faceHint(vec3 p){
-  // rotate by seed to avoid repetition
-  float rot = 0.2 + uSeedVec.z*0.8;
-  float cs=cos(rot), sn=sin(rot);
-  vec2 q = mat2(cs,-sn,sn,cs) * (p.xy + uSeedVec.xy*0.6);
+  // Sculpted “eyes + mouth” in density space; subtle and rotated
+  float rot = 0.35;
+  float cs = cos(rot), sn = sin(rot);
+  vec2 q = mat2(cs,-sn,sn,cs) * p.xy;
   float eyes = exp(-32.0*(pow(q.x-0.22,2.)+pow(q.y+0.08,2.)))+
                exp(-32.0*(pow(q.x+0.22,2.)+pow(q.y+0.08,2.)));
   float mouth= exp(-28.0*(pow(q.x,2.)+pow(q.y-0.16,2.))) * 0.7;
-  return (eyes*0.6 + mouth*0.4);
+  return (eyes*0.6 + mouth*0.4) * uBias;
 }
 
-/* Tone helper */
-float remap(float x, float a, float b){ return clamp((x-a)/(b-a), 0.0, 1.0); }
-
-/* === Main volumetric render === */
+/* Raymarch volumetric clouds with 2-layer parallax and swirl */
 vec4 renderCloud(vec2 uv){
-  // camera and ray with tilt parallax
+  // camera ray with tilt
   vec2 ndc = (uv*2.-1.);
   ndc.x *= uRes.x/uRes.y;
-  vec3 ro = vec3(0.0, 0.0, uCamZ);
+  vec3 ro = vec3(0.0, 0.0, -2.5);
   vec3 rd = normalize(vec3(ndc + uTilt * uParallax * 0.6, 1.3));
 
-  float steps = (uQuality==2? 96.0 : (uQuality==1? 72.0 : 54.0));
+  float steps = (uQuality==2? 72.0 : (uQuality==1? 56.0 : 42.0));
   float t = 0.0;
   vec3 accum = vec3(0.0);
   float accD = 0.0;
-  float transmittance = 1.0;
 
-  // light (for scattering & rays)
-  vec3 L = normalize(vec3(0.25, 0.95, 0.35));
-  float g = 0.65; // anisotropy for HG phase (forward scattering)
-
-  for (int i=0;i<120;i++){
+  for (int i=0;i<96;i++){
     if(float(i) > steps) break;
     vec3 p = ro + rd * t;
 
-    // time with global speed
-    float tt = uTime * (0.6 + 0.4*uSpeed);
+    // Two depth layers for parallax
+    vec3 p1 = p + curl(p*1.4 + uTime*0.35) * uSwirl * 0.45;
+    vec3 p2 = p*1.2 + vec3(0.0,0.0,0.4) + curl(p*2.2 + uTime*0.25) * uSwirl * 0.35;
 
-    // Swirl advection + 2 parallax layers
-    vec3 curl1 = curl(p*1.4 + uSeedVec*1.3 + tt*0.35) * uSwirl * 0.45;
-    vec3 curl2 = curl(p*2.1 + uSeedVec*2.3 + tt*0.25) * uSwirl * 0.35;
+    float d1 = max(noise(p1*2.0) - 0.28, 0.0) * uDensity;
+    float d2 = max(noise(p2*2.8) - 0.34, 0.0) * (uDensity*0.8);
 
-    vec3 p1 = p + curl1;
-    vec3 p2 = p*1.15 + vec3(0.0,0.0,0.4) + curl2 * uDepth;
+    float d = d1 + d2;
+    d += faceHint(p);
 
-    // Base fbm density (contrast-mapped)
-    float d1 = fbm(p1, uScale*1.6, uOct);
-    float d2 = fbm(p2, uScale*2.4, uOct);
-    float base = max(d1*0.85 + d2*0.65 - 0.42, 0.0);
-
-    // Micro-detail: sharpened high-frequency noise
-    float micro = max(noise(p*4.5 + uSeedVec*5.0) - 0.5, 0.0);
-    base += micro * uMicro * 0.6;
-
-    // Pareidolia bias (carved dip) unless raw mode
-    if(uRaw==0){
-      base += faceHint(p) * uBias * 0.6;
-    }
-
-    // Density & contrast shaping
-    base = pow(base, uContrast);     // adjustable contrast in density domain
-    float stepDensity = base * uDensity * 0.09;
-
-    // Early-out control
+    float stepDensity = d * 0.09;
     accD += stepDensity;
-    if(accD>3.4) break;
 
-    // Light scattering: Henyey-Greenstein approx + transmittance
-    // Phase function depends on angle between ray and light
-    float mu = dot(rd, L);
-    float phase = (1.0 - g*g) / (4.0 * 3.14159 * pow(1.0 + g*g - 2.0*g*mu, 1.5));
+    // Simple forward scattering towards a light direction
+    vec3 L = normalize(vec3(0.25, 0.95, 0.35));
+    float light = clamp(dot(L, curl(p*2.0))*0.5+0.5,0.0,1.0);
 
-    // Subsurface warm tint
     vec3 warmTint = mix(vec3(0.22,0.30,0.50), vec3(1.0,0.62,0.34), uWarm);
+    accum += warmTint * stepDensity * uLight * light;
 
-    // Accumulate radiance (albedo * density * light * transmittance)
-    float lightAmt = clamp(dot(L, curl(p*2.0))*0.5 + 0.5, 0.0, 1.0);
-    vec3  scat = warmTint * stepDensity * lightAmt;
-
-    // Add god-rays component (view-aligned scattering)
-    scat += warmTint * stepDensity * uRays * phase * 0.9;
-
-    accum += scat * transmittance;
-
-    // Beer-Lambert attenuation
-    transmittance *= exp(-stepDensity * 1.2);
-
-    // March forward
     t += 0.045;
+    if(accD>3.2) break;
   }
-
   return vec4(accum, 1.0);
 }
 
@@ -619,7 +276,6 @@ void main(){
 }
 `;
 
-/* Bloom bright-pass extraction */
 const BLOOM_EXTRACT_FRAG = `#version 300 es
 precision highp float;
 in vec2 vUV; out vec4 fragColor;
@@ -627,18 +283,19 @@ uniform sampler2D uTex;
 uniform float uThreshold;
 void main(){
   vec3 c = texture(uTex, vUV).rgb;
+  float l = max(max(c.r,c.g),c.b);
   vec3 k = max(c - uThreshold, 0.0);
   fragColor = vec4(k, 1.0);
 }
 `;
 
-/* Separable Gaussian-like blur */
 const BLUR_FRAG = `#version 300 es
 precision highp float;
 in vec2 vUV; out vec4 fragColor;
 uniform sampler2D uTex;
-uniform vec2 uDir; // (1/width, 0) or (0, 1/height)
+uniform vec2 uDir; // (1,0) or (0,1) / resolution
 void main(){
+  // 9-tap separable Gaussian-ish
   vec2 texel = uDir;
   vec3 acc = vec3(0.0);
   acc += texture(uTex, vUV - 4.0*texel).rgb * 0.05;
@@ -654,53 +311,34 @@ void main(){
 }
 `;
 
-/* Final compose: scene + bloom + LUT + filmic + color controls + vignette + grain */
 const COMPOSE_FRAG = `#version 300 es
 precision highp float;
 in vec2 vUV; out vec4 fragColor;
-
 uniform sampler2D uScene;
 uniform sampler2D uBloom;
 uniform float uBloomStrength;
-uniform int   uLUT;
-uniform float uFilmic;
-uniform float uSat;
-uniform float uVib;
-uniform float uVignette;
-uniform float uGrain;
-uniform vec2  uRes;
+uniform int uLUT;
 
-/* Filmic (Hable-like) */
-vec3 filmic(vec3 x){
-  x = max(vec3(0.0), x - 0.004);
-  return (x*(6.2*x+0.5))/(x*(6.2*x+1.7)+0.06);
-}
+/* Filmic tone map then LUT mapping */
+vec3 filmic(vec3 x){ return clamp((x*(0.8*x+0.1))/(x*(0.8*x+0.9)+0.2), 0.0, 1.0); }
 
-/* Simple saturation & vibrance */
-vec3 adjustSV(vec3 c, float sat, float vib){
-  float l = dot(c, vec3(0.2126,0.7152,0.0722));
-  vec3  g = mix(vec3(l), c, sat);
-  // vibrance boosts color more if saturation is low
-  float amt = (1.0 - clamp(abs(c.r-l)+abs(c.g-l)+abs(c.b-l), 0.0, 1.0)) * vib;
-  return mix(g, normalize(g+1e-5)*length(g), amt);
-}
-
-/* Procedural LUTs (lightweight) */
 vec3 lutMap(vec3 c, int mode){
+  // Lightweight artistic LUTs (procedural, no textures)
   float l = clamp(dot(c, vec3(0.299,0.587,0.114)),0.0,1.0);
-  if(mode==0){ return c; }
-  else if(mode==1){ // Firefly Warm
+  if(mode==0){ // Neutral
+    return c;
+  } else if(mode==1){ // Firefly Warm
     vec3 low = vec3(0.07,0.09,0.14);
     vec3 mid = vec3(0.95,0.56,0.32);
     vec3 hi  = vec3(1.00,0.82,0.62);
     vec3 g = mix(mix(low, mid, smoothstep(0.12,0.55,l)),
                  hi, smoothstep(0.55,0.98,l));
-    return mix(c, g, 0.55);
+    return mix(c, g, 0.6);
   } else if(mode==2){ // Teal-Orange Film
     vec3 teal = vec3(0.20,0.85,0.85);
     vec3 orange = vec3(1.0,0.55,0.20);
     vec3 g = mix(teal, orange, smoothstep(0.35,0.8,l));
-    return mix(c, g, 0.50);
+    return mix(c, g, 0.55);
   } else { // Indigo Twilight
     vec3 ind = vec3(0.25,0.28,0.65);
     vec3 rose= vec3(0.95,0.45,0.65);
@@ -709,42 +347,19 @@ vec3 lutMap(vec3 c, int mode){
   }
 }
 
-float vignette(vec2 uv, float str){
-  vec2 p = uv*2.0 - 1.0;
-  p.x *= uRes.x / uRes.y;
-  float d = dot(p,p);
-  return smoothstep(1.0, 1.0 - str*0.6, d);
-}
-
-float rand(vec2 co){ return fract(sin(dot(co,vec2(12.9898,78.233))) * 43758.5453); }
-
 void main(){
   vec3 scene = texture(uScene, vUV).rgb;
   vec3 bloom = texture(uBloom, vUV).rgb * uBloomStrength;
 
-  vec3 col = scene + bloom;
-
-  // Filmic tone curve (blend by intensity)
-  vec3 mapped = filmic(col);
-  col = mix(col, mapped, clamp(uFilmic,0.0,1.5));
-
-  // LUT then color tweaks
+  vec3 col = filmic(scene) + bloom;
+  col = filmic(col);
   col = lutMap(col, uLUT);
-  col = adjustSV(col, uSat, uVib);
 
-  // Vignette
-  col *= mix(1.0, vignette(vUV, uVignette), 1.0);
-
-  // Micro-grain
-  float g = (rand(vUV+fract(col.rb)) - 0.5) * uGrain;
-  col += g;
-
-  col = clamp(col, 0.0, 1.0);
   fragColor = vec4(col, 1.0);
 }
 `;
 
-/* ---------- GL helper functions ---------- */
+/* ---------- GL helpers ---------- */
 function compile(type, src){
   const sh = gl.createShader(type);
   gl.shaderSource(sh, src);
@@ -754,10 +369,10 @@ function compile(type, src){
   }
   return sh;
 }
-function program(vs, fs){
+function program(vsSrc, fsSrc){
   const p = gl.createProgram();
-  gl.attachShader(p, compile(gl.VERTEX_SHADER, vs));
-  gl.attachShader(p, compile(gl.FRAGMENT_SHADER, fs));
+  gl.attachShader(p, compile(gl.VERTEX_SHADER, vsSrc));
+  gl.attachShader(p, compile(gl.FRAGMENT_SHADER, fsSrc));
   gl.linkProgram(p);
   if(!gl.getProgramParameter(p, gl.LINK_STATUS)){
     console.error(gl.getProgramInfoLog(p));
@@ -765,77 +380,73 @@ function program(vs, fs){
   return p;
 }
 
-/* Programs */
+/* ---------- Programs ---------- */
 const sceneProg   = program(VERT, SCENE_FRAG);
 const extractProg = program(VERT, BLOOM_EXTRACT_FRAG);
 const blurProg    = program(VERT, BLUR_FRAG);
 const composeProg = program(VERT, COMPOSE_FRAG);
 
-/* Fullscreen quad */
+/* ---------- Fullscreen quad ---------- */
 const quad = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, quad);
 gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
 gl.enableVertexAttribArray(0);
 gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);
 
-/* Framebuffers & textures */
+/* ---------- Framebuffers / Textures ---------- */
 let sceneFBO, sceneTex;
 let bA_FBO, bA_Tex, bB_FBO, bB_Tex; // bloom ping-pong (downscaled)
+
 function mkTex(w,h, linear=true){
-  const t = gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D, t);
+  const tex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tex);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, linear?gl.LINEAR:gl.NEAREST);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, linear?gl.LINEAR:gl.NEAREST);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, w, h, 0, gl.RGBA, gl.HALF_FLOAT, null);
-  return t;
+  return tex;
 }
 function mkFBO(tex){
   const fb = gl.createFramebuffer();
   gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
-  if(gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE){
-    console.error('FBO incomplete');
-  }
+  const ok = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE;
+  if(!ok) console.error('FBO not complete');
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   return fb;
 }
 function initTargets(){
   const w = glCanvas.width, h = glCanvas.height;
-  if(sceneTex) gl.deleteTexture(sceneTex);
-  if(sceneFBO) gl.deleteFramebuffer(sceneFBO);
+  // Scene target
+  sceneTex && gl.deleteTexture(sceneTex);
+  sceneFBO && gl.deleteFramebuffer(sceneFBO);
   sceneTex = mkTex(w,h,true);
   sceneFBO = mkFBO(sceneTex);
+
+  // Bloom downsized to improve perf
   const bw = Math.max(1, w>>1), bh = Math.max(1, h>>1);
-  [bA_Tex,bB_Tex].forEach(t=>t&&gl.deleteTexture(t));
-  [bA_FBO,bB_FBO].forEach(f=>f&&gl.deleteFramebuffer(f));
+  [bA_Tex,bB_Tex].forEach(t=>t && gl.deleteTexture(t));
+  [bA_FBO,bB_FBO].forEach(f=>f && gl.deleteFramebuffer(f));
   bA_Tex = mkTex(bw,bh,true); bA_FBO = mkFBO(bA_Tex);
   bB_Tex = mkTex(bw,bh,true); bB_FBO = mkFBO(bB_Tex);
 }
+initTargets();
 
-/* Uniform locations */
+/* ---------- Uniform locations ---------- */
 const loc = {
+  // scene
   scene: {
     uRes: gl.getUniformLocation(sceneProg,'uRes'),
     uTime: gl.getUniformLocation(sceneProg,'uTime'),
-    uSpeed: gl.getUniformLocation(sceneProg,'uSpeed'),
     uSwirl: gl.getUniformLocation(sceneProg,'uSwirl'),
     uDensity: gl.getUniformLocation(sceneProg,'uDensity'),
-    uScale: gl.getUniformLocation(sceneProg,'uScale'),
-    uOct: gl.getUniformLocation(sceneProg,'uOct'),
-    uContrast: gl.getUniformLocation(sceneProg,'uContrast'),
-    uMicro: gl.getUniformLocation(sceneProg,'uMicro'),
-    uDepth: gl.getUniformLocation(sceneProg,'uDepth'),
-    uRays: gl.getUniformLocation(sceneProg,'uRays'),
-    uBias: gl.getUniformLocation(sceneProg,'uBias'),
-    uRaw: gl.getUniformLocation(sceneProg,'uRaw'),
-    uQuality: gl.getUniformLocation(sceneProg,'uQuality'),
+    uLight: gl.getUniformLocation(sceneProg,'uLight'),
     uWarm: gl.getUniformLocation(sceneProg,'uWarm'),
-    uCamZ: gl.getUniformLocation(sceneProg,'uCamZ'),
+    uBias: gl.getUniformLocation(sceneProg,'uBias'),
     uTilt: gl.getUniformLocation(sceneProg,'uTilt'),
     uParallax: gl.getUniformLocation(sceneProg,'uParallax'),
-    uSeedVec: gl.getUniformLocation(sceneProg,'uSeedVec'),
+    uQuality: gl.getUniformLocation(sceneProg,'uQuality'),
   },
   extract: {
     uTex: gl.getUniformLocation(extractProg,'uTex'),
@@ -850,81 +461,169 @@ const loc = {
     uBloom: gl.getUniformLocation(composeProg,'uBloom'),
     uBloomStrength: gl.getUniformLocation(composeProg,'uBloomStrength'),
     uLUT: gl.getUniformLocation(composeProg,'uLUT'),
-    uFilmic: gl.getUniformLocation(composeProg,'uFilmic'),
-    uSat: gl.getUniformLocation(composeProg,'uSat'),
-    uVib: gl.getUniformLocation(composeProg,'uVib'),
-    uVignette: gl.getUniformLocation(composeProg,'uVignette'),
-    uGrain: gl.getUniformLocation(composeProg,'uGrain'),
-    uRes: gl.getUniformLocation(composeProg,'uRes'),
   }
 };
 
-/* ========================================================================
-   INPUTS, PARALLAX, AND KEYBOARD
-   ======================================================================== */
-function syncAll(){ syncLabels(); saveSettings(); }
+/* ---------- UI bindings ---------- */
+const UI = {
+  swirl: document.getElementById('swirl'),
+  density: document.getElementById('density'),
+  light: document.getElementById('light'),
+  warm: document.getElementById('warm'),
+  bias: document.getElementById('bias'),
+  bloom: document.getElementById('bloom'),
+  threshold: document.getElementById('threshold'),
+  parallax: document.getElementById('parallax'),
+  lut: document.getElementById('lut'),
+  quality: document.getElementById('quality'),
+  toggle: document.getElementById('toggle'),
+  shot: document.getElementById('shot'),
+  clear: document.getElementById('clear'),
+  export: document.getElementById('export'),
+};
 
+function syncLabels(){
+  document.getElementById('v-swirl').textContent = (+UI.swirl.value).toFixed(2);
+  document.getElementById('v-density').textContent = (+UI.density.value).toFixed(2);
+  document.getElementById('v-light').textContent = (+UI.light.value).toFixed(2);
+  document.getElementById('v-warm').textContent = (+UI.warm.value).toFixed(2);
+  document.getElementById('v-bias').textContent = (+UI.bias.value).toFixed(2);
+  document.getElementById('v-bloom').textContent = (+UI.bloom.value).toFixed(2);
+  document.getElementById('v-thresh').textContent = (+UI.threshold.value).toFixed(2);
+  document.getElementById('v-parallax').textContent = (+UI.parallax.value).toFixed(2);
+}
 ['input','change'].forEach(evt=>{
-  Object.values(UI).forEach(el=>{
-    if(el && el.addEventListener) el.addEventListener(evt, syncAll);
-  });
+  ['swirl','density','light','warm','bias','bloom','threshold','parallax','lut','quality']
+    .forEach(id=>UI[id].addEventListener(evt, syncLabels));
 });
+syncLabels();
 
-UI.seedRand.addEventListener('click', ()=>{ UI.seed.value = randomSeedString(); updateURLSeed(); rebuildSeed(); syncAll(); });
-UI.seed.addEventListener('change', ()=>{ updateURLSeed(); rebuildSeed(); syncAll(); });
-UI.rawMode.addEventListener('change', syncAll);
-
-let running = true;
-UI.toggle.addEventListener('click', ()=>{ running=!running; UI.toggle.textContent = running ? 'Pause (Space)' : 'Play (Space)'; });
-
-/* Mouse-driven tilt with smoothing */
-let tilt = {x:0, y:0};
+/* ---------- Mouse parallax ---------- */
+let tilt = {x:0,y:0};
 window.addEventListener('pointermove', (e)=>{
   const nx = (e.clientX / innerWidth) * 2 - 1;
   const ny = (e.clientY / innerHeight) * 2 - 1;
-  const a = +UI.tiltSmooth.value;
-  tilt.x += (nx - tilt.x) * a;
-  tilt.y += (ny - tilt.y) * a;
+  // ease
+  tilt.x += (nx - tilt.x)*0.08;
+  tilt.y += (ny - tilt.y)*0.08;
 });
 
-/* Keyboard shortcuts */
-window.addEventListener('keydown', (e)=>{
+/* ---------- Animation loop ---------- */
+let running = true;
+UI.toggle.addEventListener('click', ()=>{
+  running = !running;
+  UI.toggle.textContent = running ? 'Pause' : 'Play';
+});
+window.addEventListener('keydown',(e)=>{
   if(e.code==='Space'){ e.preventDefault(); UI.toggle.click(); }
   if((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='s'){ e.preventDefault(); takeScreenshot(); }
-  if(e.key.toLowerCase()==='r'){ UI.rawMode.value = (UI.rawMode.value==='1' ? '0' : '1'); syncAll(); }
 });
 
-/* ========================================================================
-   ANNOTATIONS: drag boxes + labels; import/export; persist
-   ======================================================================== */
+let t0 = performance.now();
+function draw(){
+  const now = performance.now();
+  const dt = (now - t0) * 0.001;
+  const time = running ? dt : 0.0;
+
+  /* Scene pass */
+  gl.useProgram(sceneProg);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, sceneFBO);
+  gl.viewport(0,0,glCanvas.width, glCanvas.height);
+  gl.clearColor(0,0,0,1); gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.uniform2f(loc.scene.uRes, glCanvas.width, glCanvas.height);
+  gl.uniform1f(loc.scene.uTime, time);
+  gl.uniform1f(loc.scene.uSwirl, +UI.swirl.value);
+  gl.uniform1f(loc.scene.uDensity, +UI.density.value);
+  gl.uniform1f(loc.scene.uLight, +UI.light.value);
+  gl.uniform1f(loc.scene.uWarm, +UI.warm.value);
+  gl.uniform1f(loc.scene.uBias, +UI.bias.value);
+  gl.uniform2f(loc.scene.uTilt, tilt.x, -tilt.y);
+  gl.uniform1f(loc.scene.uParallax, +UI.parallax.value);
+  gl.uniform1i(loc.scene.uQuality, +UI.quality.value);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+  /* Bloom: extract bright → blur (ping-pong) */
+  const bw = glCanvas.width>>1, bh = glCanvas.height>>1;
+
+  // downsample + threshold into bA
+  gl.useProgram(extractProg);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, bA_FBO);
+  gl.viewport(0,0,bw,bh);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, sceneTex);
+  gl.uniform1i(loc.extract.uTex, 0);
+  gl.uniform1f(loc.extract.uThreshold, +UI.threshold.value);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+  // blur passes
+  gl.useProgram(blurProg);
+  const passes = 4;
+  for(let i=0;i<passes;i++){
+    // horizontal
+    gl.bindFramebuffer(gl.FRAMEBUFFER, bB_FBO);
+    gl.bindTexture(gl.TEXTURE_2D, bA_Tex);
+    gl.uniform1i(loc.blur.uTex, 0);
+    gl.uniform2f(loc.blur.uDir, 1/bw, 0);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+    // vertical
+    gl.bindFramebuffer(gl.FRAMEBUFFER, bA_FBO);
+    gl.bindTexture(gl.TEXTURE_2D, bB_Tex);
+    gl.uniform2f(loc.blur.uDir, 0, 1/bh);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  }
+
+  /* Composite to screen */
+  gl.useProgram(composeProg);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.viewport(0,0,glCanvas.width, glCanvas.height);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, sceneTex);
+  gl.uniform1i(loc.comp.uScene, 0);
+  gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, bA_Tex);
+  gl.uniform1i(loc.comp.uBloom, 1);
+  gl.uniform1f(loc.comp.uBloomStrength, +UI.bloom.value);
+  gl.uniform1i(loc.comp.uLUT, +UI.lut.value);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+  requestAnimationFrame(draw);
+}
+resize(); draw();
+
+/* ============================================================
+   Annotation overlay (2D canvas): drag to create rectangle,
+   prompt for label, store in localStorage, draw nicely.
+============================================================ */
 const ctx = annCanvas.getContext('2d');
-const LS_ANNS = 'pareidolia:annotations:v2';
 let anns = [];
-let dragging = null;
+let dragging = null; // {x0,y0,x1,y1}
+const LS_KEY = 'pareidolia:annotations';
 
 function loadAnns(){
-  try{ anns = JSON.parse(localStorage.getItem(LS_ANNS) || '[]'); }
+  try{ anns = JSON.parse(localStorage.getItem(LS_KEY) || '[]'); }
   catch{ anns = []; }
   redrawAnns();
 }
-function saveAnns(){ localStorage.setItem(LS_ANNS, JSON.stringify(anns)); }
+function saveAnns(){
+  localStorage.setItem(LS_KEY, JSON.stringify(anns));
+}
 function redrawAnns(preview){
   ctx.clearRect(0,0,annCanvas.width, annCanvas.height);
+
+  // existing
   ctx.lineWidth = 1.5;
   ctx.setLineDash([6,4]);
-
-  // Existing annotations
   anns.forEach(a=>{
-    ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.8)';
     ctx.fillStyle = 'rgba(255,255,255,0.06)';
     ctx.strokeRect(a.x, a.y, a.w, a.h);
     ctx.fillRect(a.x, a.y, a.w, a.h);
 
-    const label = a.label||'';
+    // label
+    const label = a.label || '';
     if(label){
       ctx.setLineDash([]);
-      ctx.fillStyle = 'rgba(0,0,0,0.65)';
-      ctx.strokeStyle='rgba(255,255,255,0.85)';
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.strokeStyle = 'rgba(255,255,255,0.85)';
       ctx.lineWidth = 1;
       ctx.font = '12px ui-sans-serif, system-ui';
       const pad=6;
@@ -934,20 +633,22 @@ function redrawAnns(preview){
       const lx = a.x, ly = a.y + a.h + 6;
       ctx.fillRect(lx, ly, lw, lh);
       ctx.strokeRect(lx, ly, lw, lh);
-      ctx.fillStyle='#ffffff';
+      ctx.fillStyle = '#ffffff';
       ctx.fillText(label, lx+pad, ly+12.5);
       ctx.setLineDash([6,4]);
     }
   });
 
-  // Preview box
+  // preview drag
   if(preview){
     const x = Math.min(preview.x0, preview.x1);
     const y = Math.min(preview.y0, preview.y1);
     const w = Math.abs(preview.x1 - preview.x0);
     const h = Math.abs(preview.y1 - preview.y0);
-    ctx.strokeStyle='rgba(119,225,255,0.9)';
-    ctx.fillStyle='rgba(119,225,255,0.08)';
+    ctx.strokeStyle = 'rgba(119,225,255,0.9)';
+    ctx.fillStyle = 'rgba(119,225,255,0.08)';
+    ctx.setLineDash([6,4]);
+    ctx.lineWidth=1.5;
     ctx.strokeRect(x,y,w,h);
     ctx.fillRect(x,y,w,h);
   }
@@ -980,173 +681,36 @@ UI.clear.addEventListener('click', ()=>{
   }
 });
 UI.export.addEventListener('click', ()=>{
-  const blob = new Blob([JSON.stringify(anns, null, 2)], {type:'application/json'});
+  const data = JSON.stringify(anns, null, 2);
+  const blob = new Blob([data], {type:'application/json'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'annotations.json';
   a.click();
   URL.revokeObjectURL(a.href);
 });
-UI.import.addEventListener('click', ()=>{
-  const input = document.createElement('input');
-  input.type='file'; input.accept='application/json';
-  input.onchange = () => {
-    const f = input.files[0]; if(!f) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      try{ anns = JSON.parse(reader.result); saveAnns(); redrawAnns(); }
-      catch{ alert('Invalid JSON.'); }
-    };
-    reader.readAsText(f);
-  };
-  input.click();
-});
+loadAnns();
 
-/* ========================================================================
-   SCREENSHOT (GL + annotations composited to PNG)
-   ======================================================================== */
+/* ============================================================
+   Screenshot (GL + annotations composited)
+============================================================ */
 function takeScreenshot(){
   const tmp = document.createElement('canvas');
   tmp.width = glCanvas.width; tmp.height = glCanvas.height;
   const tctx = tmp.getContext('2d');
+
+  // draw GL (devicePixelRatio aware)
   tctx.drawImage(glCanvas, 0, 0);
+
+  // scale annotation canvas to GL size
   tctx.drawImage(annCanvas, 0, 0, annCanvas.width, annCanvas.height, 0, 0, tmp.width, tmp.height);
+
   const link = document.createElement('a');
   link.download = 'pareidolia-firefly.png';
   link.href = tmp.toDataURL('image/png');
   link.click();
 }
 UI.shot.addEventListener('click', takeScreenshot);
-window.addEventListener('keydown', (e)=>{
-  if((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='s'){ e.preventDefault(); takeScreenshot(); }
-});
-
-/* ========================================================================
-   RENDER LOOP: scene → bloom → compose
-   ======================================================================== */
-const settings = loadSettings();
-
-/* Seed: affects bias placement and swirl offsets (through uSeedVec) */
-let seedRand = mulberry32(0);
-function rebuildSeed(){
-  const s = hashStringToInt(UI.seed.value || 'default');
-  seedRand = mulberry32(s);
-  const u = new URL(location.href); u.searchParams.set('seed', UI.seed.value); history.replaceState({},'',u.toString());
-}
-function initSeed(){
-  initSeedFromURL();
-  if(settings.seed) UI.seed.value = settings.seed;
-  rebuildSeed();
-}
-initSeed();
-
-/* Restore previous settings if any */
-writeUI({...{
-  raw:0, swirl:1.20, density:1.0, scale:1.60, oct:5, contrast:1.2, micro:0.45, depth:0.65, rays:0.70,
-  bias:0.25, quality:1, speed:1.0, animate:1, warm:0.65, lut:1, bloom:0.85, threshold:0.75,
-  filmic:1.0, sat:1.0, vib:0.2, vignette:0.25, grain:0.08, parallax:0.30, tiltSmooth:0.08, camZ:-2.5
-}, ...settings});
-
-/* GL draw targets init and start loop */
-resize();
-
-let last = performance.now();
-function draw(){
-  const now = performance.now();
-  const cfg = readUI();
-  const dt = (now - last) * 0.001;
-  last = now;
-  const time = (running && cfg.animate) ? (now * 0.001) : 0.0;
-
-  /* ============ SCENE PASS ============ */
-  gl.useProgram(sceneProg);
-  gl.bindFramebuffer(gl.FRAMEBUFFER, sceneFBO);
-  gl.viewport(0,0,glCanvas.width, glCanvas.height);
-  gl.clearColor(0,0,0,1); gl.clear(gl.COLOR_BUFFER_BIT);
-
-  gl.uniform2f(loc.scene.uRes, glCanvas.width, glCanvas.height);
-  gl.uniform1f(loc.scene.uTime, time);
-  gl.uniform1f(loc.scene.uSpeed, cfg.speed);
-  gl.uniform1f(loc.scene.uSwirl, cfg.swirl);
-  gl.uniform1f(loc.scene.uDensity, cfg.density);
-  gl.uniform1f(loc.scene.uScale, cfg.scale);
-  gl.uniform1i(loc.scene.uOct, cfg.oct);
-  gl.uniform1f(loc.scene.uContrast, cfg.contrast);
-  gl.uniform1f(loc.scene.uMicro, cfg.micro);
-  gl.uniform1f(loc.scene.uDepth, cfg.depth);
-  gl.uniform1f(loc.scene.uRays, cfg.rays);
-  gl.uniform1f(loc.scene.uBias, cfg.bias);
-  gl.uniform1i(loc.scene.uRaw, cfg.raw);
-  gl.uniform1i(loc.scene.uQuality, cfg.quality);
-  gl.uniform1f(loc.scene.uWarm, cfg.warm);
-  gl.uniform1f(loc.scene.uCamZ, parseFloat(cfg.camZ));
-
-  // Tilt & parallax
-  gl.uniform2f(loc.scene.uTilt, tilt.x, -tilt.y);
-  gl.uniform1f(loc.scene.uParallax, cfg.parallax);
-
-  // Seed vector
-  const sv = [seedRand(), seedRand(), seedRand()];
-  gl.uniform3f(loc.scene.uSeedVec, sv[0], sv[1], sv[2]);
-
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-
-  /* ============ BLOOM EXTRACT ============ */
-  const bw = glCanvas.width>>1, bh = glCanvas.height>>1;
-
-  gl.useProgram(extractProg);
-  gl.bindFramebuffer(gl.FRAMEBUFFER, bA_FBO);
-  gl.viewport(0,0,bw,bh);
-  gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, sceneTex);
-  gl.uniform1i(loc.extract.uTex, 0);
-  gl.uniform1f(loc.extract.uThreshold, cfg.threshold);
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-
-  /* ============ BLUR PASSES (ping-pong) ============ */
-  gl.useProgram(blurProg);
-  const passes = 4;
-  for(let i=0;i<passes;i++){
-    // horizontal
-    gl.bindFramebuffer(gl.FRAMEBUFFER, bB_FBO);
-    gl.bindTexture(gl.TEXTURE_2D, bA_Tex);
-    gl.uniform1i(loc.blur.uTex, 0);
-    gl.uniform2f(loc.blur.uDir, 1/bw, 0);
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-
-    // vertical
-    gl.bindFramebuffer(gl.FRAMEBUFFER, bA_FBO);
-    gl.bindTexture(gl.TEXTURE_2D, bB_Tex);
-    gl.uniform2f(loc.blur.uDir, 0, 1/bh);
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-  }
-
-  /* ============ COMPOSE TO SCREEN ============ */
-  gl.useProgram(composeProg);
-  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-  gl.viewport(0,0,glCanvas.width, glCanvas.height);
-  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, sceneTex);
-  gl.uniform1i(loc.comp.uScene, 0);
-  gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, bA_Tex);
-  gl.uniform1i(loc.comp.uBloom, 1);
-  gl.uniform1f(loc.comp.uBloomStrength, cfg.bloom);
-  gl.uniform1i(loc.comp.uLUT, cfg.lut);
-  gl.uniform1f(loc.comp.uFilmic, cfg.filmic);
-  gl.uniform1f(loc.comp.uSat, cfg.sat);
-  gl.uniform1f(loc.comp.uVib, cfg.vib);
-  gl.uniform1f(loc.comp.uVignette, cfg.vignette);
-  gl.uniform1f(loc.comp.uGrain, cfg.grain);
-  gl.uniform2f(loc.comp.uRes, glCanvas.width, glCanvas.height);
-
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-
-  requestAnimationFrame(draw);
-}
-draw();
-
-/* Persist settings on unload */
-window.addEventListener('beforeunload', saveSettings);
-loadAnns();
 </script>
 </body>
 </html>
