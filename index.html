@@ -1,0 +1,607 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pareidolia Lab</title>
+<style>
+  :root {
+    --bg: #0d0f12;
+    --panel: #151922;
+    --text: #e7ecf3;
+    --muted: #9aa7b1;
+    --accent: #5ad1ff;
+    --accent-2: #9f7bff;
+    --danger: #ff5a7a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; color: var(--text); background: var(--bg);
+    font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    display: grid; grid-template-columns: 320px 1fr; min-height: 100dvh;
+  }
+  aside {
+    padding: 16px; background: linear-gradient(180deg, var(--panel), #0f1320);
+    border-right: 1px solid #1f2230; display: flex; flex-direction: column; gap: 12px;
+  }
+  main { position: relative; display: grid; place-items: center; }
+  #canvas { width: 100%; height: 100%; display: block; background: #000; }
+  .row { display: flex; align-items: center; gap: 8px; }
+  .col { display: flex; flex-direction: column; gap: 8px; }
+  label { font-weight: 600; }
+  input[type="range"] { width: 100%; }
+  input[type="text"], input[type="number"] {
+    width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #2b3245;
+    background: #0f1320; color: var(--text);
+  }
+  button {
+    padding: 8px 12px; border-radius: 8px; border: 1px solid #2b3245; 
+    background: #11162a; color: var(--text); cursor: pointer;
+  }
+  button.primary { border-color: #2a3750; background: #122036; color: #dbf4ff; }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .kbd { padding: 2px 6px; border: 1px solid #2b3245; border-radius: 6px; color: var(--muted); }
+  .muted { color: var(--muted); }
+  .divider { height: 1px; background: #1f2230; margin: 8px 0; }
+  .badge { background: #0f1b2f; color: #cfe9ff; padding: 2px 8px; border-radius: 999px; font-size: 12px; }
+  .legend { font-size: 12px; color: var(--muted); }
+  #overlayToggleLabel { display: inline-flex; align-items: center; gap: 6px; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 999px; 
+    background: #12172a; border: 1px solid #2b3245; color: var(--muted);
+  }
+  .callout {
+    border: 1px dashed #34405f; padding: 10px; border-radius: 10px; background: #0e1427;
+  }
+  .hint { color: #b2c7ff; }
+  .annotation {
+    position: absolute; border: 1px dashed rgba(255,255,255,0.6); pointer-events: none; 
+    background: rgba(255,255,255,0.05);
+  }
+  .annotation::after {
+    content: attr(data-label);
+    position: absolute; bottom: -1.6em; left: 0; font-size: 12px; 
+    background: rgba(0,0,0,0.6); padding: 2px 6px; border-radius: 6px;
+    color: #fff;
+  }
+  footer {
+    margin-top: auto; font-size: 12px; color: var(--muted);
+  }
+  @media (max-width: 880px) {
+    body { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+    aside { order: 1; }
+    main { order: 2; height: calc(100dvh - 420px); }
+  }
+</style>
+</head>
+<body>
+  <aside aria-label="Controls">
+    <h2>Pareidolia Lab <span class="badge">alpha</span></h2>
+    <div class="legend">Use ambiguous noise + subtle bias to explore “seeing” faces in randomness.</div>
+
+    <div class="divider"></div>
+
+    <div class="col" role="group" aria-labelledby="seed-label">
+      <label id="seed-label" for="seed">Seed</label>
+      <div class="row">
+        <input id="seed" type="text" placeholder="e.g., owl-42" />
+        <button id="randomSeed" title="Randomize seed" aria-label="Randomize seed">🎲</button>
+      </div>
+      <div class="legend">Shareable via <code>?seed=your-seed</code></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="col" role="group" aria-labelledby="noise-label">
+      <label id="noise-label">Noise</label>
+      <div>
+        <div>Scale <span id="scaleVal" class="muted"></span></div>
+        <input id="scale" type="range" min="8" max="256" step="1" value="96" />
+      </div>
+      <div>
+        <div>Octaves <span id="octavesVal" class="muted"></span></div>
+        <input id="octaves" type="range" min="1" max="6" step="1" value="4" />
+      </div>
+      <div>
+        <div>Contrast <span id="contrastVal" class="muted"></span></div>
+        <input id="contrast" type="range" min="0.5" max="3" step="0.01" value="1.2" />
+      </div>
+      <div>
+        <div>Speed <span id="speedVal" class="muted"></span></div>
+        <input id="speed" type="range" min="0" max="2" step="0.01" value="0.35" />
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="col" role="group" aria-labelledby="bias-label">
+      <label id="bias-label">Pareidolia Bias</label>
+      <div class="row">
+        <span>Strength</span>
+        <input id="bias" type="range" min="0" max="1" step="0.01" value="0.18" />
+      </div>
+      <div class="row">
+        <label id="overlayToggleLabel" class="pill">
+          <input id="showBiasOverlay" type="checkbox" />
+          Show bias overlay
+        </label>
+        <button id="toggleRaw" class="primary" title="Toggle raw vs biased (R)">Raw</button>
+      </div>
+      <div class="legend">Bias subtly adds low-opacity “eye + mouth” hints at random positions.</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="row" role="group" aria-label="Actions">
+      <button id="playPause" class="primary" title="Play/Pause (Space)">Pause</button>
+      <button id="snapshot" title="Save PNG">Snapshot</button>
+      <button id="clearAnn" title="Clear annotations" style="margin-left:auto;color:#ffb0bf;border-color:#5b2a36;background:#1a0f15;">Clear</button>
+    </div>
+
+    <div class="callout">
+      <div class="hint">Shortcuts:</div>
+      <div class="legend">
+        <span class="kbd">Space</span> Play/Pause · 
+        <span class="kbd">R</span> Raw/Biased · 
+        <span class="kbd">B</span> Bias overlay
+      </div>
+      <div class="legend">Drag on canvas to annotate; press Enter to save the label.</div>
+    </div>
+
+    <footer>
+      <div>Local only. No uploads. Annotations saved in your browser.</div>
+    </footer>
+  </aside>
+
+  <main>
+    <canvas id="canvas" aria-label="Pareidolia canvas"></canvas>
+    <div id="annLayer" aria-hidden="true"></div>
+  </main>
+
+<script>
+/* ========== Utilities: seeded RNG, helpers ========== */
+function mulberry32(a) {
+  return function() {
+    let t = a += 0x6D2B79F5;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function hashStringToInt(str) {
+  let h = 2166136261;
+  for (let i=0; i<str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h += (h<<1) + (h<<4) + (h<<7) + (h<<8) + (h<<24);
+  }
+  return h >>> 0;
+}
+function lerp(a,b,t){ return a + (b-a)*t; }
+function clamp(x,a,b){ return Math.max(a, Math.min(b, x)); }
+
+/* ========== Perlin noise (2D) + fBM ========== */
+function makePerlin2D(seed) {
+  const rand = mulberry32(seed);
+  const p = new Uint8Array(512);
+  const perm = new Uint8Array(256);
+  for (let i=0; i<256; i++) perm[i] = i;
+  // Fisher–Yates shuffle
+  for (let i=255; i>0; i--) {
+    const j = Math.floor(rand()*(i+1));
+    [perm[i], perm[j]] = [perm[j], perm[i]];
+  }
+  for (let i=0; i<512; i++) p[i] = perm[i & 255];
+
+  const grad2 = [
+    [ 1, 1],[ -1, 1],[ 1,-1],[ -1,-1],
+    [ 1, 0],[ -1, 0],[ 0, 1],[ 0,-1],
+  ];
+  function dot(g, x, y){ return g[0]*x + g[1]*y; }
+  function fade(t){ return t*t*t*(t*(t*6 - 15) + 10); }
+  function noise2D(x, y){
+    const X = Math.floor(x) & 255;
+    const Y = Math.floor(y) & 255;
+    const xf = x - Math.floor(x);
+    const yf = y - Math.floor(y);
+    const u = fade(xf);
+    const v = fade(yf);
+
+    const aa = p[X + p[Y]], ab = p[X + p[Y+1]];
+    const ba = p[X+1 + p[Y]], bb = p[X+1 + p[Y+1]];
+
+    const gAA = grad2[aa & 7], gBA = grad2[ba & 7];
+    const gAB = grad2[ab & 7], gBB = grad2[bb & 7];
+
+    const x1 = lerp(dot(gAA, xf,   yf),   dot(gBA, xf-1, yf),   u);
+    const x2 = lerp(dot(gAB, xf,   yf-1), dot(gBB, xf-1, yf-1), u);
+    return lerp(x1, x2, v); // ~[-1,1]
+  }
+  return noise2D;
+}
+
+function fbm(noise2D, x, y, octaves=4, lacunarity=2.0, gain=0.5) {
+  let amp = 1.0, freq = 1.0, sum = 0.0, norm = 0.0;
+  for (let i=0; i<octaves; i++) {
+    sum += amp * noise2D(x*freq, y*freq);
+    norm += amp;
+    amp *= gain;
+    freq *= lacunarity;
+  }
+  return sum / norm; // approx [-1,1]
+}
+
+/* ========== Pareidolia bias: subtle face-like templates ========== */
+function drawFaceHint(ctx, cx, cy, size, rot, alpha, seedRand) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(rot);
+  ctx.globalAlpha = alpha;
+  // Eyes: two soft blobs
+  const eyeOffset = size * 0.22;
+  const eyeR = size * 0.12;
+  const mouthW = size * 0.55;
+  const mouthY = size * 0.18;
+
+  // soft radial eyes
+  const drawBlob = (x, y, r) => {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    // darker center fading to transparent
+    g.addColorStop(0.0, "rgba(0,0,0,0.35)");
+    g.addColorStop(1.0, "rgba(0,0,0,0.0)");
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI*2);
+    ctx.fill();
+  };
+  drawBlob(-eyeOffset, 0, eyeR);
+  drawBlob( eyeOffset, 0, eyeR * (0.9 + seedRand()*0.2));
+
+  // Mouth: shallow dark arc
+  ctx.strokeStyle = "rgba(0,0,0,0.28)";
+  ctx.lineWidth = Math.max(1, size*0.06);
+  ctx.beginPath();
+  const curve = size * (0.08 + seedRand()*0.06);
+  ctx.moveTo(-mouthW/2, mouthY);
+  ctx.quadraticCurveTo(0, mouthY + curve, mouthW/2, mouthY);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function sprinkleBias(ctx, w, h, strength, seedRand) {
+  if (strength <= 0) return [];
+  const count = Math.floor(lerp(2, 12, strength)); // number of hints
+  const placed = [];
+  for (let i=0; i<count; i++) {
+    const cx = seedRand() * w;
+    const cy = seedRand() * h;
+    const size = lerp(24, Math.min(w,h)/3, seedRand()**2);
+    const rot = (seedRand()*2 - 1) * 0.6; // +/- ~34°
+    const alpha = 0.08 + strength*0.2 + seedRand()*0.04;
+    drawFaceHint(ctx, cx, cy, size, rot, alpha, seedRand);
+    placed.push({cx, cy, size, rot});
+  }
+  return placed; // for optional overlay
+}
+
+/* ========== App state & DOM ========== */
+const els = {
+  canvas: document.getElementById('canvas'),
+  annLayer: document.getElementById('annLayer'),
+  seed: document.getElementById('seed'),
+  randomSeed: document.getElementById('randomSeed'),
+  scale: document.getElementById('scale'),
+  octaves: document.getElementById('octaves'),
+  contrast: document.getElementById('contrast'),
+  speed: document.getElementById('speed'),
+  bias: document.getElementById('bias'),
+  showBiasOverlay: document.getElementById('showBiasOverlay'),
+  toggleRaw: document.getElementById('toggleRaw'),
+  playPause: document.getElementById('playPause'),
+  snapshot: document.getElementById('snapshot'),
+  clearAnn: document.getElementById('clearAnn'),
+  scaleVal: document.getElementById('scaleVal'),
+  octavesVal: document.getElementById('octavesVal'),
+  contrastVal: document.getElementById('contrastVal'),
+  speedVal: document.getElementById('speedVal'),
+};
+
+const state = {
+  running: true,
+  rawMode: false, // when true: don't apply bias
+  annotations: [],
+  drag: null, // {x0,y0,x1,y1}
+};
+
+function getQuerySeed() {
+  const u = new URL(location.href);
+  return u.searchParams.get('seed');
+}
+function setQuerySeed(val) {
+  const u = new URL(location.href);
+  if (val) u.searchParams.set('seed', val);
+  else u.searchParams.delete('seed');
+  history.replaceState({}, '', u.toString());
+}
+
+function randomSeedString() {
+  const nouns = ['owl','cloud','rock','toast','tree','wave','smoke','stain','sky','dust'];
+  const adj = ['silent','lucky','odd','fuzzy','noisy','gentle','mystic','sleepy','weird','blur'];
+  const r = Math.floor(Math.random()*10);
+  return `${adj[r]}-${nouns[(r*7+3)%10]}-${Math.floor(Math.random()*1e6)}`;
+}
+
+/* ========== Canvas setup & render loop ========== */
+const ctx = els.canvas.getContext('2d', { alpha: false, willReadFrequently: false });
+let off = document.createElement('canvas');
+let offCtx = off.getContext('2d');
+
+function resize() {
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const w = els.canvas.clientWidth || window.innerWidth;
+  const h = els.canvas.clientHeight || window.innerHeight;
+  els.canvas.width = Math.floor(w * dpr);
+  els.canvas.height = Math.floor(h * dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+
+  off.width = Math.floor(w / 2);
+  off.height = Math.floor(h / 2);
+}
+window.addEventListener('resize', resize);
+
+/* ========== Rendering pipeline ========== */
+let perlin, rand, biasOverlayCache = [];
+let t = 0;
+
+function rebuildNoise() {
+  const seedStr = els.seed.value.trim() || 'default';
+  const s = hashStringToInt(seedStr);
+  rand = mulberry32(s);
+  perlin = makePerlin2D(s);
+
+  // reset bias cache
+  biasOverlayCache = [];
+}
+
+function renderFrame(dt) {
+  if (!state.running) return;
+
+  const W = off.width, H = off.height;
+  if (W === 0 || H === 0) return;
+
+  const scale = parseFloat(els.scale.value);
+  const oct = parseInt(els.octaves.value, 10);
+  const contrast = parseFloat(els.contrast.value);
+  const speed = parseFloat(els.speed.value);
+  const biasStrength = parseFloat(els.bias.value);
+  const rawMode = state.rawMode;
+
+  t += dt * speed * 0.0005;
+
+  // Draw base fBM noise to offscreen
+  const img = offCtx.createImageData(W, H);
+  let i = 0;
+  for (let y=0; y<H; y++) {
+    for (let x=0; x<W; x++) {
+      const nx = x/scale + t*0.8;
+      const ny = y/scale + t*0.6;
+      let v = fbm(perlin, nx, ny, oct, 2.0, 0.5); // [-1,1]
+      v = (v + 1) * 0.5; // [0,1]
+      // contrast
+      const m = 0.5;
+      v = clamp((v - m) * contrast + m, 0, 1);
+
+      const c = Math.floor(v * 255);
+      img.data[i++] = c;
+      img.data[i++] = c;
+      img.data[i++] = c;
+      img.data[i++] = 255;
+    }
+  }
+  offCtx.putImageData(img, 0, 0);
+
+  // Apply pareidolia bias (subtle “eyes + mouth” hints)
+  ctx.clearRect(0, 0, els.canvas.width, els.canvas.height);
+  ctx.drawImage(off, 0, 0, off.width, off.height, 0, 0, els.canvas.width, els.canvas.height);
+
+  if (!rawMode && biasStrength > 0) {
+    // Lazy-generate bias overlay once per seed/frame family
+    if (biasOverlayCache.length === 0) {
+      // deterministic sprinkle for current seed
+      const biasRand = mulberry32(hashStringToInt(els.seed.value + ':bias'));
+      // draw onto a temp canvas at screen resolution for crisp edges
+      const tmp = document.createElement('canvas');
+      tmp.width = els.canvas.width;
+      tmp.height = els.canvas.height;
+      const tctx = tmp.getContext('2d');
+      sprinkleBias(tctx, tmp.width, tmp.height, biasStrength, biasRand);
+      biasOverlayCache.push(tmp);
+      // Optional: store positions if you want to visualize outlines
+    }
+    const overlay = biasOverlayCache[0];
+    ctx.drawImage(overlay, 0, 0);
+  }
+
+  // optional bias overlay visualization
+  if (els.showBiasOverlay.checked && !state.rawMode) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(90,209,255,0.5)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6,4]);
+    ctx.strokeRect(6,6, els.canvas.width-12, els.canvas.height-12);
+    ctx.restore();
+  }
+}
+
+/* ========== Annotations ========== */
+function loadAnnotations() {
+  try {
+    const key = 'anno:' + (els.seed.value || 'default');
+    const data = localStorage.getItem(key);
+    state.annotations = data ? JSON.parse(data) : [];
+  } catch { state.annotations = []; }
+  redrawAnnotations();
+}
+
+function saveAnnotations() {
+  try {
+    const key = 'anno:' + (els.seed.value || 'default');
+    localStorage.setItem(key, JSON.stringify(state.annotations));
+  } catch {}
+}
+
+function canvasClientRect() {
+  return els.canvas.getBoundingClientRect();
+}
+
+function redrawAnnotations() {
+  const rect = canvasClientRect();
+  document.querySelectorAll('.annotation').forEach(n => n.remove());
+  state.annotations.forEach(a => {
+    const div = document.createElement('div');
+    div.className = 'annotation';
+    div.style.left = (rect.left + a.x) + 'px';
+    div.style.top = (rect.top + a.y) + 'px';
+    div.style.width = a.w + 'px';
+    div.style.height = a.h + 'px';
+    div.dataset.label = a.label || '';
+    document.body.appendChild(div);
+  });
+}
+
+function startDrag(ev) {
+  const r = canvasClientRect();
+  const x = ev.clientX - r.left;
+  const y = ev.clientY - r.top;
+  state.drag = { x0:x, y0:y, x1:x, y1:y };
+}
+function updateDrag(ev) {
+  if (!state.drag) return;
+  const r = canvasClientRect();
+  state.drag.x1 = ev.clientX - r.left;
+  state.drag.y1 = ev.clientY - r.top;
+  // draw temp rectangle
+  redrawAnnotations();
+  const a = state.drag;
+  const div = document.createElement('div');
+  div.className = 'annotation';
+  const x = Math.min(a.x0, a.x1), y = Math.min(a.y0, a.y1);
+  const w = Math.abs(a.x1 - a.x0), h = Math.abs(a.y1 - a.y0);
+  const rect = canvasClientRect();
+  div.style.left = (rect.left + x) + 'px';
+  div.style.top = (rect.top + y) + 'px';
+  div.style.width = w + 'px';
+  div.style.height = h + 'px';
+  div.dataset.label = '…';
+  document.body.appendChild(div);
+}
+function endDrag(ev) {
+  if (!state.drag) return;
+  const a = state.drag;
+  state.drag = null;
+  const label = prompt('What do you see? (e.g., “owl”, “smiling face”)');
+  if (!label) { redrawAnnotations(); return; }
+  const x = Math.min(a.x0, a.x1), y = Math.min(a.y0, a.y1);
+  const w = Math.abs(a.x1 - a.x0), h = Math.abs(a.y1 - a.y0);
+  state.annotations.push({ x, y, w, h, label });
+  saveAnnotations(); redrawAnnotations();
+}
+
+/* ========== Event wiring ========== */
+function syncLabels() {
+  els.scaleVal.textContent = els.scale.value;
+  els.octavesVal.textContent = els.octaves.value;
+  els.contrastVal.textContent = els.contrast.value;
+  els.speedVal.textContent = els.speed.value;
+}
+
+function initFromURL() {
+  const qsSeed = getQuerySeed();
+  if (qsSeed) els.seed.value = qsSeed;
+  else els.seed.value = randomSeedString();
+}
+
+function applySeed() {
+  setQuerySeed(els.seed.value.trim());
+  rebuildNoise();
+  loadAnnotations();
+  biasOverlayCache = []; // invalidate overlay
+}
+
+els.randomSeed.addEventListener('click', () => {
+  els.seed.value = randomSeedString();
+  applySeed();
+});
+
+[els.scale, els.octaves, els.contrast, els.speed, els.bias].forEach(inp => {
+  inp.addEventListener('input', () => { syncLabels(); biasOverlayCache = []; });
+});
+
+els.seed.addEventListener('change', applySeed);
+
+els.playPause.addEventListener('click', () => {
+  state.running = !state.running;
+  els.playPause.textContent = state.running ? 'Pause' : 'Play';
+});
+
+els.toggleRaw.addEventListener('click', () => {
+  state.rawMode = !state.rawMode;
+  els.toggleRaw.textContent = state.rawMode ? 'Biased' : 'Raw';
+});
+
+els.showBiasOverlay.addEventListener('change', () => { /* visual only */ });
+
+els.snapshot.addEventListener('click', () => {
+  // composite already on main canvas
+  const link = document.createElement('a');
+  link.download = `pareidolia-${(els.seed.value||'seed')}.png`;
+  link.href = els.canvas.toDataURL('image/png');
+  link.click();
+});
+
+els.clearAnn.addEventListener('click', () => {
+  if (confirm('Clear all annotations for this seed?')) {
+    state.annotations = [];
+    saveAnnotations();
+    redrawAnnotations();
+  }
+});
+
+// Canvas interactions (desktop)
+els.canvas.addEventListener('pointerdown', startDrag);
+window.addEventListener('pointermove', updateDrag);
+window.addEventListener('pointerup', endDrag);
+
+// Keyboard shortcuts
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'Space') {
+    e.preventDefault();
+    els.playPause.click();
+  } else if (e.key.toLowerCase() === 'r') {
+    els.toggleRaw.click();
+  } else if (e.key.toLowerCase() === 'b') {
+    els.showBiasOverlay.checked = !els.showBiasOverlay.checked;
+  }
+});
+
+/* ========== Main loop ========== */
+let last = performance.now();
+function loop(now) {
+  const dt = now - last; last = now;
+  renderFrame(dt);
+  requestAnimationFrame(loop);
+}
+
+/* ========== Boot ========== */
+resize();
+initFromURL();
+rebuildNoise();
+syncLabels();
+loadAnnotations();
+requestAnimationFrame(loop);
+window.addEventListener('scroll', redrawAnnotations);
+window.addEventListener('resize', () => { resize(); redrawAnnotations(); });
+
+</script>
+</body>
+</html>
