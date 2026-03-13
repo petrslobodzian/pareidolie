@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <title>Pareidolia Lab – Firefly Swirl Edition</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+
 <style>
 /* ----------- Global Style Reset ----------- */
 html, body {
@@ -13,6 +14,7 @@ html, body {
   background: #0b0e14;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
 }
+
 /* ----------- Canvas Fullscreen ----------- */
 #glcanvas {
   position: absolute;
@@ -21,30 +23,37 @@ html, body {
   height: 100%;
   display: block;
 }
-/* ----------- UI Panel ----------- */
+
+/* ----------- UI Panel (modern/glassmorphic) ----------- */
 #ui {
   position: absolute;
   top: 24px; left: 24px;
   width: 300px;
   padding: 20px;
   border-radius: 16px;
+
   backdrop-filter: blur(22px) saturate(140%);
   background: rgba(20, 24, 35, 0.55);
   border: 1px solid rgba(255,255,255,0.08);
+
   color: #e8edf5;
   box-shadow: 0 8px 32px rgba(0,0,0,0.35);
 }
+
 #ui h1 {
   font-size: 20px;
   margin-bottom: 0;
   font-weight: 600;
   color: #ffffff;
 }
+
 #ui p {
   margin-top: 4px;
   font-size: 14px;
   color: #aab6c9;
 }
+
+/* controls */
 label {
   display: block;
   font-size: 13px;
@@ -55,13 +64,14 @@ label {
 input[type=range] {
   width: 100%;
 }
+
 .switch {
   margin-top: 12px;
 }
 </style>
 </head>
-<body>
 
+<body>
 <canvas id="glcanvas"></canvas>
 
 <div id="ui">
@@ -78,7 +88,7 @@ input[type=range] {
   <input type="range" id="light" min="0" max="2" step="0.01" value="1.3"/>
 
   <label>Warmth</label>
-  <input type="range" id="warm" min="0" max="1" step="0.01" value="0.50"/>
+  <input type="range" id="warm" min="0" max="1" step="0.01" value="0.65"/>
 
   <label>Pareidolia Bias</label>
   <input type="range" id="bias" min="0" max="1" step="0.01" value="0.25"/>
@@ -90,7 +100,11 @@ input[type=range] {
 </div>
 
 <script>
-/* WebGL setup */
+/* -----------------------------------------------------------
+   WebGL2 Firefly‑Gaze Swirling Cloud Shader
+   Hybrid: Raymarch Volumetric Noise + Curl-Noise Swirl + LUT
+------------------------------------------------------------- */
+
 const canvas = document.getElementById("glcanvas");
 const gl = canvas.getContext("webgl2");
 
@@ -102,7 +116,7 @@ function resize() {
 window.addEventListener("resize", resize);
 resize();
 
-/* Vertex shader */
+/* ------------------ Vertex Shader ------------------ */
 const vertexShaderSrc = `#version 300 es
 precision highp float;
 layout(location=0) in vec2 pos;
@@ -112,7 +126,7 @@ void main() {
   gl_Position = vec4(pos, 0.0, 1.0);
 }`;
 
-/* Fragment shader — updated for blue clouds with warmth slider */
+/* ------------------ Fragment Shader ------------------ */
 const fragmentShaderSrc = `#version 300 es
 precision highp float;
 
@@ -127,94 +141,98 @@ uniform float warm;
 uniform float pareidoliaBias;
 uniform vec2 resolution;
 
-/* Hash / noise helpers */
+/* ------------ Hash / Noise helpers ------------ */
 vec3 hash3(vec3 p){
-  p = fract(p * 0.3183099 + vec3(0.1,0.2,0.3));
-  p *= 17.0;
-  return fract(vec3(p.x*p.y, p.y*p.z, p.z*p.x));
+    p = fract(p * 0.3183099 + vec3(0.1,0.2,0.3));
+    p *= 17.0;
+    return fract(vec3(p.x*p.y, p.y*p.z, p.z*p.x));
 }
+
 float noise(vec3 p){
-  vec3 i = floor(p);
-  vec3 f = fract(p);
-  vec3 u = f*f*(3.0-2.0*f);
-  return mix(
-    mix(
-      mix(dot(hash3(i+vec3(0,0,0)), f-vec3(0,0,0)),
-          dot(hash3(i+vec3(1,0,0)), f-vec3(1,0,0)), u.x),
-      mix(dot(hash3(i+vec3(0,1,0)), f-vec3(0,1,0)),
-          dot(hash3(i+vec3(1,1,0)), f-vec3(1,1,0)), u.x), u.y),
-    mix(
-      mix(dot(hash3(i+vec3(0,0,1)), f-vec3(0,0,1)),
-          dot(hash3(i+vec3(1,0,1)), f-vec3(1,0,1)), u.x),
-      mix(dot(hash3(i+vec3(0,1,1)), f-vec3(0,1,1)),
-          dot(hash3(i+vec3(1,1,1)), f-vec3(1,1,1)), u.x), u.y),
-  u.z);
+    vec3 i = floor(p);
+    vec3 f = fract(p);
+    vec3 u = f*f*(3.0-2.0*f);
+    return mix(
+        mix( mix( dot(hash3(i+vec3(0,0,0)), f - vec3(0,0,0)),
+                  dot(hash3(i+vec3(1,0,0)), f - vec3(1,0,0)), u.x),
+             mix( dot(hash3(i+vec3(0,1,0)), f - vec3(0,1,0)),
+                  dot(hash3(i+vec3(1,1,0)), f - vec3(1,1,0)), u.x), u.y),
+        mix( mix( dot(hash3(i+vec3(0,0,1)), f - vec3(0,0,1)),
+                  dot(hash3(i+vec3(1,0,1)), f - vec3(1,0,1)), u.x),
+             mix( dot(hash3(i+vec3(0,1,1)), f - vec3(0,1,1)),
+                  dot(hash3(i+vec3(1,1,1)), f - vec3(1,1,1)), u.x), u.y),
+        u.z);
 }
 
-/* Curl Noise for Swirl */
+/* ----- Curl Noise for Swirl Field ----- */
 vec3 curl(vec3 p){
-  float e = 0.1;
-  float nx = noise(p + vec3(0,e,0)) - noise(p - vec3(0,e,0));
-  float ny = noise(p + vec3(e,0,0)) - noise(p - vec3(e,0,0));
-  float nz = noise(p + vec3(0,0,e)) - noise(p - vec3(0,0,e));
-  return normalize(vec3(nz - ny, nx - nz, ny - nx));
+    const float e = 0.1;
+    float nx = noise(p + vec3(0,e,0)) - noise(p - vec3(0,e,0));
+    float ny = noise(p + vec3(e,0,0)) - noise(p - vec3(e,0,0));
+    float nz = noise(p + vec3(0,0,e)) - noise(p - vec3(0,0,e));
+    return normalize(vec3(nz - ny, nx - nz, ny - nx));
 }
 
-/* Pareidolia facial density hint */
+/* ----- Pareidolia hint carved into density ----- */
 float pareidoliaFace(vec3 p) {
-  float eyes = exp(-30.0 * (pow(p.x-0.2,2.0)+pow(p.y+0.1,2.0)))
-             + exp(-30.0 * (pow(p.x+0.2,2.0)+pow(p.y+0.1,2.0)));
-  float mouth = exp(-25.0 * (pow(p.x,2.0)+pow(p.y-0.15,2.0))) * 0.6;
-  return (eyes*0.6 + mouth*0.4) * pareidoliaBias;
+    // Slight face-like dip in density
+    float eyes = exp(-30.0 * (pow(p.x-0.2,2.0)+pow(p.y+0.1,2.0)))
+               + exp(-30.0 * (pow(p.x+0.2,2.0)+pow(p.y+0.1,2.0)));
+    float mouth = exp(-25.0 * (pow(p.x,2.0)+pow(p.y-0.15,2.0))) * 0.6;
+    return (eyes*0.6 + mouth*0.4) * pareidoliaBias;
 }
 
-/* Volumetric raymarch */
+/* ------------- Raymarch Volumetric Cloud ------------- */
 vec4 renderCloud(vec2 uv){
-  vec3 rayDir = normalize(vec3((uv - 0.5) * vec2(resolution.x/resolution.y, 1.0), 1.0));
-  vec3 rayPos = vec3(0., 0., -2.);
-  float t = 0.0;
-  float totalDensity = 0.0;
-  vec3 colorAccum = vec3(0.0);
+    vec3 rayDir = normalize(vec3((uv - 0.5) * vec2(resolution.x/resolution.y, 1.0), 1.0));
+    vec3 rayPos = vec3(0., 0., -2.);
 
-  for(int i=0; i<60; i++){
-    vec3 p = rayPos + rayDir * t;
+    float t = 0.0;
+    float totalDensity = 0.0;
+    vec3 colorAccum = vec3(0.0);
 
-    vec3 flow = curl(p*1.5 + time*0.4) * swirlPower * 0.5;
-    p += flow;
+    for(int i=0; i<60; i++){
+        vec3 p = rayPos + rayDir * t;
 
-    float d = noise(p*2.0) * density;
-    d += pareidoliaFace(p);
-    d = max(d - 0.3, 0.0);
+        // Apply flow field swirl
+        vec3 flow = curl(p*1.5 + time*0.4) * swirlPower * 0.5;
+        p += flow;
 
-    float stepDensity = d * 0.07;
-    totalDensity += stepDensity;
+        float d = noise(p*2.0) * density;
 
-    float light = clamp(dot(normalize(vec3(0.2,1.0,0.4)), curl(p*2.0))*0.5+0.5,0.0,1.0);
+        // Pareidolia hint
+        d += pareidoliaFace(p);
 
-    /* NEW — Blue warmth gradient */
-    vec3 coolBlue = vec3(0.25, 0.45, 1.0);
-    vec3 warmBlue = vec3(0.50, 0.70, 1.0);
-    vec3 warmTint = mix(coolBlue, warmBlue, warm);
+        d = max(d - 0.3, 0.0);
 
-    colorAccum += warmTint * stepDensity * lightPower * light;
+        float stepDensity = d * 0.07;
+        totalDensity += stepDensity;
 
-    t += 0.04;
-    if (totalDensity > 3.0) break;
-  }
-  return vec4(colorAccum, 1.0);
+        // Lighting
+        float light = clamp(dot(normalize(vec3(0.2,1.0,0.4)), curl(p*2.0))*0.5+0.5,0.0,1.0);
+        vec3 warmTint = mix(vec3(0.2,0.3,0.5), vec3(1.0,0.6,0.3), warm);
+
+        colorAccum += warmTint * stepDensity * lightPower * light;
+
+        t += 0.04;
+        if (totalDensity > 3.0) break;
+    }
+
+    return vec4(colorAccum, 1.0);
 }
 
-/* Filmic tone mapping */
+/* ------------- Final Color Grading ------------- */
 vec3 filmic(vec3 x){
-  return clamp((x*(0.8*x+0.1))/(x*(0.8*x+0.9)+0.2), 0.0, 1.0);
+    return clamp((x*(0.8*x+0.1))/(x*(0.8*x+0.9)+0.2), 0.0, 1.0);
 }
 
 void main() {
-  vec4 col = renderCloud(uv);
-  outColor = vec4(filmic(col.rgb * 1.5), 1.0);
-}`;
+    vec4 col = renderCloud(uv);
+    outColor = vec4(filmic(col.rgb * 1.5), 1.0);
+}
+`;
 
-/* Shader compile */
+/* ------------------ Shader Loader ------------------ */
 function compileShader(type, src){
   const sh = gl.createShader(type);
   gl.shaderSource(sh, src);
@@ -223,6 +241,7 @@ function compileShader(type, src){
     console.error(gl.getShaderInfoLog(sh));
   return sh;
 }
+
 const vs = compileShader(gl.VERTEX_SHADER, vertexShaderSrc);
 const fs = compileShader(gl.FRAGMENT_SHADER, fragmentShaderSrc);
 
@@ -232,18 +251,17 @@ gl.attachShader(prog, fs);
 gl.linkProgram(prog);
 gl.useProgram(prog);
 
-/* Fullscreen quad */
+/* ------------------ Fullscreen Quad ------------------ */
 const quad = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, quad);
-gl.bufferData(
-  gl.ARRAY_BUFFER,
-  new Float32Array([-1,-1, 1,-1, -1,1, 1,1]),
-  gl.STATIC_DRAW
-);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+  -1,-1,  1,-1,  -1,1,  1,1
+]), gl.STATIC_DRAW);
+
 gl.enableVertexAttribArray(0);
 gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);
 
-/* Uniforms */
+/* ------------------ Uniform Handles ------------------ */
 const uTime = gl.getUniformLocation(prog, "time");
 const uSwirl = gl.getUniformLocation(prog, "swirlPower");
 const uDensity = gl.getUniformLocation(prog, "density");
@@ -252,7 +270,7 @@ const uWarm = gl.getUniformLocation(prog, "warm");
 const uBias = gl.getUniformLocation(prog, "pareidoliaBias");
 const uRes = gl.getUniformLocation(prog, "resolution");
 
-/* UI handles */
+/* ------------------ UI Binding ------------------ */
 const ui = {
   swirl: document.getElementById("swirl"),
   density: document.getElementById("density"),
@@ -262,8 +280,9 @@ const ui = {
   anim: document.getElementById("anim")
 };
 
-/* Render loop */
+/* ------------------ Render Loop ------------------ */
 let t0 = performance.now();
+
 function render() {
   const t = ui.anim.checked ? (performance.now() - t0) * 0.001 : 0.0;
 
@@ -278,8 +297,8 @@ function render() {
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   requestAnimationFrame(render);
 }
+
 render();
 </script>
-
 </body>
 </html>
