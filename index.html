@@ -2,715 +2,303 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Pareidolia Lab — Firefly Swirl (Bloom + LUT + Parallax + Annotations)</title>
+<title>Pareidolia Lab – Firefly Swirl Edition</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+
 <style>
-  :root{
-    --bg: #0a0d14;
-    --panel: rgba(18,22,35,0.58);
-    --border: rgba(255,255,255,0.08);
-    --text: #e9eef6;
-    --muted: #a7b4c8;
-    --accent: #77e1ff;
-    --accent-2: #ffb86b;
-    --danger: #ff6b8a;
-  }
-  html,body{height:100%;margin:0;background:var(--bg);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Inter,Arial}
-  #gl{position:absolute;inset:0;width:100%;height:100%;display:block;}
-  #ann{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:auto;}
+/* ----------- Global Style Reset ----------- */
+html, body {
+  margin: 0; padding: 0;
+  height: 100%; width: 100%;
+  overflow: hidden;
+  background: #0b0e14;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
+}
 
-  /* Panel */
-  #ui{
-    position:absolute;top:20px;left:20px;width:340px;padding:18px 16px 16px;border-radius:16px;
-    background:var(--panel);backdrop-filter:blur(20px) saturate(140%);border:1px solid var(--border);
-    color:var(--text);box-shadow:0 10px 45px rgba(0,0,0,0.35);
-  }
-  #ui h1{margin:0 0 6px;font-size:18px;font-weight:700;letter-spacing:.2px}
-  #ui p{margin:0 0 10px;color:var(--muted);font-size:13px}
-  .row{display:flex;gap:8px;align-items:center}
-  .col{display:flex;flex-direction:column;gap:10px}
-  label{font-size:12px;color:#cfe2ff;display:flex;justify-content:space-between}
-  .sub{color:var(--muted)}
-  input[type=range]{width:100%}
-  select,button{
-    width:100%;padding:8px 10px;border-radius:10px;border:1px solid var(--border);
-    background:rgba(18,22,35,0.7);color:var(--text);cursor:pointer
-  }
-  button.primary{background:linear-gradient(180deg,#102036,#0d1524);border-color:#1f3558}
-  button.warn{background:linear-gradient(180deg,#2b1117,#1a0a0e);border-color:#3a1a24;color:#ffc2cf}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .kbd{border:1px solid var(--border);border-radius:6px;padding:1px 6px;color:var(--muted);font-size:11px}
-  .divider{height:1px;background:var(--border);margin:10px 0 2px}
+/* ----------- Canvas Fullscreen ----------- */
+#glcanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
 
-  /* Annotation hint */
-  #hint{
-    position:absolute;left:20px;bottom:20px;padding:10px 12px;border-radius:12px;
-    background:rgba(15,17,26,0.6);border:1px solid var(--border);color:#cfe2ff;font-size:12px;
-    backdrop-filter:blur(12px)
-  }
+/* ----------- UI Panel (modern/glassmorphic) ----------- */
+#ui {
+  position: absolute;
+  top: 24px; left: 24px;
+  width: 300px;
+  padding: 20px;
+  border-radius: 16px;
 
-  @media (max-width:900px){
-    #ui{width:calc(100% - 40px)}
-  }
+  backdrop-filter: blur(22px) saturate(140%);
+  background: rgba(20, 24, 35, 0.55);
+  border: 1px solid rgba(255,255,255,0.08);
+
+  color: #e8edf5;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+}
+
+#ui h1 {
+  font-size: 20px;
+  margin-bottom: 0;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+#ui p {
+  margin-top: 4px;
+  font-size: 14px;
+  color: #aab6c9;
+}
+
+/* controls */
+label {
+  display: block;
+  font-size: 13px;
+  margin-top: 16px;
+  margin-bottom: 4px;
+  color: #cfd8e6;
+}
+input[type=range] {
+  width: 100%;
+}
+
+.switch {
+  margin-top: 12px;
+}
 </style>
 </head>
+
 <body>
-<canvas id="gl"></canvas>
-<canvas id="ann"></canvas>
+<canvas id="glcanvas"></canvas>
 
-<!-- Control Panel -->
-<div id="ui" role="region" aria-label="Controls">
-  <h1>Pareidolia Lab · Firefly Swirl</h1>
-  <p>Volumetric swirling clouds with bloom, LUTs, parallax & annotations.</p>
+<div id="ui">
+  <h1>Pareidolia Lab ✦ Firefly Swirl</h1>
+  <p>Swirling volumetric painterly clouds with pareidolia hints.</p>
 
-  <div class="col">
-    <div>
-      <label>Swirl Strength <span class="sub" id="v-swirl">1.20</span></label>
-      <input type="range" id="swirl" min="0" max="2" step="0.01" value="1.20" />
-    </div>
-    <div>
-      <label>Cloud Density <span class="sub" id="v-density">1.00</span></label>
-      <input type="range" id="density" min="0.1" max="2" step="0.01" value="1.00" />
-    </div>
-    <div>
-      <label>Light Intensity <span class="sub" id="v-light">1.30</span></label>
-      <input type="range" id="light" min="0" max="2" step="0.01" value="1.30" />
-    </div>
-    <div>
-      <label>Warmth <span class="sub" id="v-warm">0.65</span></label>
-      <input type="range" id="warm" min="0" max="1" step="0.01" value="0.65" />
-    </div>
-    <div>
-      <label>Pareidolia Bias <span class="sub" id="v-bias">0.25</span></label>
-      <input type="range" id="bias" min="0" max="1" step="0.01" value="0.25" />
-    </div>
+  <label>Swirl Strength</label>
+  <input type="range" id="swirl" min="0" max="2" step="0.01" value="1.20"/>
 
-    <div class="divider"></div>
+  <label>Cloud Density</label>
+  <input type="range" id="density" min="0.1" max="2" step="0.01" value="1.0"/>
 
-    <div>
-      <label>Bloom Strength <span class="sub" id="v-bloom">0.85</span></label>
-      <input type="range" id="bloom" min="0" max="2" step="0.01" value="0.85" />
-    </div>
-    <div>
-      <label>Bloom Threshold <span class="sub" id="v-thresh">0.75</span></label>
-      <input type="range" id="threshold" min="0" max="1" step="0.01" value="0.75" />
-    </div>
+  <label>Light Intensity</label>
+  <input type="range" id="light" min="0" max="2" step="0.01" value="1.3"/>
 
-    <div>
-      <label>Parallax Amount <span class="sub" id="v-parallax">0.30</span></label>
-      <input type="range" id="parallax" min="0" max="1" step="0.01" value="0.30" />
-    </div>
+  <label>Warmth</label>
+  <input type="range" id="warm" min="0" max="1" step="0.01" value="0.65"/>
 
-    <div class="grid">
-      <div>
-        <label for="lut">Color LUT</label>
-        <select id="lut">
-          <option value="0">Neutral</option>
-          <option value="1" selected>Firefly Warm</option>
-          <option value="2">Teal-Orange Film</option>
-          <option value="3">Indigo Twilight</option>
-        </select>
-      </div>
-      <div>
-        <label for="quality">Quality</label>
-        <select id="quality">
-          <option value="0">Fast</option>
-          <option value="1" selected>Balanced</option>
-          <option value="2">High</option>
-        </select>
-      </div>
-    </div>
+  <label>Pareidolia Bias</label>
+  <input type="range" id="bias" min="0" max="1" step="0.01" value="0.25"/>
 
-    <div class="grid">
-      <button id="toggle" class="primary">Pause</button>
-      <button id="shot" class="primary">Screenshot ⌘S</button>
-    </div>
-    <div class="grid">
-      <button id="clear" class="warn">Clear Annotations</button>
-      <button id="export" class="primary">Export JSON</button>
-    </div>
-
-    <p class="sub">Tips: drag on canvas to annotate (<span class="kbd">Enter</span> to label). Move mouse for parallax. <span class="kbd">Space</span> play/pause.</p>
+  <div class="switch">
+    <input type="checkbox" id="anim" checked />
+    <label for="anim"> Animate</label>
   </div>
 </div>
 
-<div id="hint">Annotations saved in your browser (per seedless session).</div>
-
 <script>
-/* ============================================================
-   HYBRID WEBGL2 PIPELINE (single file):
-   1) Scene pass → offscreen texture (volumetric swirl clouds)
-   2) Bloom threshold + multi-pass separable blur (downscaled)
-   3) Composite: scene + bloom, tone map + LUT
-   4) Parallax via mouse tilt + multi-layer sampling
-   5) Annotation overlay on a 2D canvas, saved to localStorage
-============================================================ */
+/* -----------------------------------------------------------
+   WebGL2 Firefly‑Gaze Swirling Cloud Shader
+   Hybrid: Raymarch Volumetric Noise + Curl-Noise Swirl + LUT
+------------------------------------------------------------- */
 
-const glCanvas = document.getElementById('gl');
-const annCanvas = document.getElementById('ann');
-const gl = glCanvas.getContext('webgl2', {antialias: false, preserveDrawingBuffer: true});
-if(!gl){ alert('WebGL2 not available'); }
+const canvas = document.getElementById("glcanvas");
+const gl = canvas.getContext("webgl2");
 
-/* ---------- Resize ---------- */
-function resize(){
-  const dpr = Math.min(2, window.devicePixelRatio || 1);
-  glCanvas.width = Math.floor(innerWidth * dpr);
-  glCanvas.height = Math.floor(innerHeight * dpr);
-  gl.viewport(0,0,glCanvas.width, glCanvas.height);
-
-  annCanvas.width = innerWidth;
-  annCanvas.height = innerHeight;
-
-  initTargets(); // reallocate FBOs
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  gl.viewport(0,0,canvas.width, canvas.height);
 }
-window.addEventListener('resize', resize);
+window.addEventListener("resize", resize);
+resize();
 
-/* ---------- Shaders ---------- */
-const VERT = `#version 300 es
+/* ------------------ Vertex Shader ------------------ */
+const vertexShaderSrc = `#version 300 es
 precision highp float;
 layout(location=0) in vec2 pos;
-out vec2 vUV;
-void main(){
-  vUV = pos*0.5+0.5;
-  gl_Position = vec4(pos,0,1);
+out vec2 uv;
+void main() {
+  uv = pos * 0.5 + 0.5;
+  gl_Position = vec4(pos, 0.0, 1.0);
 }`;
 
-const SCENE_FRAG = `#version 300 es
+/* ------------------ Fragment Shader ------------------ */
+const fragmentShaderSrc = `#version 300 es
 precision highp float;
-in vec2 vUV; out vec4 fragColor;
 
-uniform vec2  uRes;
-uniform float uTime;
-uniform float uSwirl;
-uniform float uDensity;
-uniform float uLight;
-uniform float uWarm;
-uniform float uBias;
-uniform vec2  uTilt;       // mouse parallax [-1..1]
-uniform float uParallax;   // strength
-uniform int   uQuality;    // 0/1/2
+in vec2 uv;
+out vec4 outColor;
 
-/* ----- Hash / Noise ----- */
+uniform float time;
+uniform float swirlPower;
+uniform float density;
+uniform float lightPower;
+uniform float warm;
+uniform float pareidoliaBias;
+uniform vec2 resolution;
+
+/* ------------ Hash / Noise helpers ------------ */
 vec3 hash3(vec3 p){
-  p = fract(p * 0.3183099 + vec3(0.1,0.2,0.3));
-  p *= 17.0;
-  return fract(vec3(p.x*p.y, p.y*p.z, p.z*p.x));
+    p = fract(p * 0.3183099 + vec3(0.1,0.2,0.3));
+    p *= 17.0;
+    return fract(vec3(p.x*p.y, p.y*p.z, p.z*p.x));
 }
+
 float noise(vec3 p){
-  vec3 i=floor(p), f=fract(p);
-  vec3 u=f*f*(3.-2.*f);
-  float n=
-  mix(mix(mix(dot(hash3(i+vec3(0,0,0)), f-vec3(0,0,0)),
-               dot(hash3(i+vec3(1,0,0)), f-vec3(1,0,0)), u.x),
-          mix(dot(hash3(i+vec3(0,1,0)), f-vec3(0,1,0)),
-               dot(hash3(i+vec3(1,1,0)), f-vec3(1,1,0)), u.x), u.y),
-      mix(mix(dot(hash3(i+vec3(0,0,1)), f-vec3(0,0,1)),
-               dot(hash3(i+vec3(1,0,1)), f-vec3(1,0,1)), u.x),
-          mix(dot(hash3(i+vec3(0,1,1)), f-vec3(0,1,1)),
-               dot(hash3(i+vec3(1,1,1)), f-vec3(1,1,1)), u.x), u.y), u.z);
-  return n;
+    vec3 i = floor(p);
+    vec3 f = fract(p);
+    vec3 u = f*f*(3.0-2.0*f);
+    return mix(
+        mix( mix( dot(hash3(i+vec3(0,0,0)), f - vec3(0,0,0)),
+                  dot(hash3(i+vec3(1,0,0)), f - vec3(1,0,0)), u.x),
+             mix( dot(hash3(i+vec3(0,1,0)), f - vec3(0,1,0)),
+                  dot(hash3(i+vec3(1,1,0)), f - vec3(1,1,0)), u.x), u.y),
+        mix( mix( dot(hash3(i+vec3(0,0,1)), f - vec3(0,0,1)),
+                  dot(hash3(i+vec3(1,0,1)), f - vec3(1,0,1)), u.x),
+             mix( dot(hash3(i+vec3(0,1,1)), f - vec3(0,1,1)),
+                  dot(hash3(i+vec3(1,1,1)), f - vec3(1,1,1)), u.x), u.y),
+        u.z);
 }
+
+/* ----- Curl Noise for Swirl Field ----- */
 vec3 curl(vec3 p){
-  float e=0.12;
-  float nx=noise(p+vec3(0,e,0))-noise(p-vec3(0,e,0));
-  float ny=noise(p+vec3(e,0,0))-noise(p-vec3(e,0,0));
-  float nz=noise(p+vec3(0,0,e))-noise(p-vec3(0,0,e));
-  return normalize(vec3(nz-ny, nx-nz, ny-nx));
-}
-float faceHint(vec3 p){
-  // Sculpted “eyes + mouth” in density space; subtle and rotated
-  float rot = 0.35;
-  float cs = cos(rot), sn = sin(rot);
-  vec2 q = mat2(cs,-sn,sn,cs) * p.xy;
-  float eyes = exp(-32.0*(pow(q.x-0.22,2.)+pow(q.y+0.08,2.)))+
-               exp(-32.0*(pow(q.x+0.22,2.)+pow(q.y+0.08,2.)));
-  float mouth= exp(-28.0*(pow(q.x,2.)+pow(q.y-0.16,2.))) * 0.7;
-  return (eyes*0.6 + mouth*0.4) * uBias;
+    const float e = 0.1;
+    float nx = noise(p + vec3(0,e,0)) - noise(p - vec3(0,e,0));
+    float ny = noise(p + vec3(e,0,0)) - noise(p - vec3(e,0,0));
+    float nz = noise(p + vec3(0,0,e)) - noise(p - vec3(0,0,e));
+    return normalize(vec3(nz - ny, nx - nz, ny - nx));
 }
 
-/* Raymarch volumetric clouds with 2-layer parallax and swirl */
+/* ----- Pareidolia hint carved into density ----- */
+float pareidoliaFace(vec3 p) {
+    // Slight face-like dip in density
+    float eyes = exp(-30.0 * (pow(p.x-0.2,2.0)+pow(p.y+0.1,2.0)))
+               + exp(-30.0 * (pow(p.x+0.2,2.0)+pow(p.y+0.1,2.0)));
+    float mouth = exp(-25.0 * (pow(p.x,2.0)+pow(p.y-0.15,2.0))) * 0.6;
+    return (eyes*0.6 + mouth*0.4) * pareidoliaBias;
+}
+
+/* ------------- Raymarch Volumetric Cloud ------------- */
 vec4 renderCloud(vec2 uv){
-  // camera ray with tilt
-  vec2 ndc = (uv*2.-1.);
-  ndc.x *= uRes.x/uRes.y;
-  vec3 ro = vec3(0.0, 0.0, -2.5);
-  vec3 rd = normalize(vec3(ndc + uTilt * uParallax * 0.6, 1.3));
+    vec3 rayDir = normalize(vec3((uv - 0.5) * vec2(resolution.x/resolution.y, 1.0), 1.0));
+    vec3 rayPos = vec3(0., 0., -2.);
 
-  float steps = (uQuality==2? 72.0 : (uQuality==1? 56.0 : 42.0));
-  float t = 0.0;
-  vec3 accum = vec3(0.0);
-  float accD = 0.0;
+    float t = 0.0;
+    float totalDensity = 0.0;
+    vec3 colorAccum = vec3(0.0);
 
-  for (int i=0;i<96;i++){
-    if(float(i) > steps) break;
-    vec3 p = ro + rd * t;
+    for(int i=0; i<60; i++){
+        vec3 p = rayPos + rayDir * t;
 
-    // Two depth layers for parallax
-    vec3 p1 = p + curl(p*1.4 + uTime*0.35) * uSwirl * 0.45;
-    vec3 p2 = p*1.2 + vec3(0.0,0.0,0.4) + curl(p*2.2 + uTime*0.25) * uSwirl * 0.35;
+        // Apply flow field swirl
+        vec3 flow = curl(p*1.5 + time*0.4) * swirlPower * 0.5;
+        p += flow;
 
-    float d1 = max(noise(p1*2.0) - 0.28, 0.0) * uDensity;
-    float d2 = max(noise(p2*2.8) - 0.34, 0.0) * (uDensity*0.8);
+        float d = noise(p*2.0) * density;
 
-    float d = d1 + d2;
-    d += faceHint(p);
+        // Pareidolia hint
+        d += pareidoliaFace(p);
 
-    float stepDensity = d * 0.09;
-    accD += stepDensity;
+        d = max(d - 0.3, 0.0);
 
-    // Simple forward scattering towards a light direction
-    vec3 L = normalize(vec3(0.25, 0.95, 0.35));
-    float light = clamp(dot(L, curl(p*2.0))*0.5+0.5,0.0,1.0);
+        float stepDensity = d * 0.07;
+        totalDensity += stepDensity;
 
-    vec3 warmTint = mix(vec3(0.22,0.30,0.50), vec3(1.0,0.62,0.34), uWarm);
-    accum += warmTint * stepDensity * uLight * light;
+        // Lighting
+        float light = clamp(dot(normalize(vec3(0.2,1.0,0.4)), curl(p*2.0))*0.5+0.5,0.0,1.0);
+        vec3 warmTint = mix(vec3(0.2,0.3,0.5), vec3(1.0,0.6,0.3), warm);
 
-    t += 0.045;
-    if(accD>3.2) break;
-  }
-  return vec4(accum, 1.0);
+        colorAccum += warmTint * stepDensity * lightPower * light;
+
+        t += 0.04;
+        if (totalDensity > 3.0) break;
+    }
+
+    return vec4(colorAccum, 1.0);
 }
 
-void main(){
-  fragColor = renderCloud(vUV);
+/* ------------- Final Color Grading ------------- */
+vec3 filmic(vec3 x){
+    return clamp((x*(0.8*x+0.1))/(x*(0.8*x+0.9)+0.2), 0.0, 1.0);
 }
-`;
 
-const BLOOM_EXTRACT_FRAG = `#version 300 es
-precision highp float;
-in vec2 vUV; out vec4 fragColor;
-uniform sampler2D uTex;
-uniform float uThreshold;
-void main(){
-  vec3 c = texture(uTex, vUV).rgb;
-  float l = max(max(c.r,c.g),c.b);
-  vec3 k = max(c - uThreshold, 0.0);
-  fragColor = vec4(k, 1.0);
+void main() {
+    vec4 col = renderCloud(uv);
+    outColor = vec4(filmic(col.rgb * 1.5), 1.0);
 }
 `;
 
-const BLUR_FRAG = `#version 300 es
-precision highp float;
-in vec2 vUV; out vec4 fragColor;
-uniform sampler2D uTex;
-uniform vec2 uDir; // (1,0) or (0,1) / resolution
-void main(){
-  // 9-tap separable Gaussian-ish
-  vec2 texel = uDir;
-  vec3 acc = vec3(0.0);
-  acc += texture(uTex, vUV - 4.0*texel).rgb * 0.05;
-  acc += texture(uTex, vUV - 3.0*texel).rgb * 0.09;
-  acc += texture(uTex, vUV - 2.0*texel).rgb * 0.12;
-  acc += texture(uTex, vUV - 1.0*texel).rgb * 0.16;
-  acc += texture(uTex, vUV).rgb           * 0.16;
-  acc += texture(uTex, vUV + 1.0*texel).rgb * 0.16;
-  acc += texture(uTex, vUV + 2.0*texel).rgb * 0.12;
-  acc += texture(uTex, vUV + 3.0*texel).rgb * 0.09;
-  acc += texture(uTex, vUV + 4.0*texel).rgb * 0.05;
-  fragColor = vec4(acc, 1.0);
-}
-`;
-
-const COMPOSE_FRAG = `#version 300 es
-precision highp float;
-in vec2 vUV; out vec4 fragColor;
-uniform sampler2D uScene;
-uniform sampler2D uBloom;
-uniform float uBloomStrength;
-uniform int uLUT;
-
-/* Filmic tone map then LUT mapping */
-vec3 filmic(vec3 x){ return clamp((x*(0.8*x+0.1))/(x*(0.8*x+0.9)+0.2), 0.0, 1.0); }
-
-vec3 lutMap(vec3 c, int mode){
-  // Lightweight artistic LUTs (procedural, no textures)
-  float l = clamp(dot(c, vec3(0.299,0.587,0.114)),0.0,1.0);
-  if(mode==0){ // Neutral
-    return c;
-  } else if(mode==1){ // Firefly Warm
-    vec3 low = vec3(0.07,0.09,0.14);
-    vec3 mid = vec3(0.95,0.56,0.32);
-    vec3 hi  = vec3(1.00,0.82,0.62);
-    vec3 g = mix(mix(low, mid, smoothstep(0.12,0.55,l)),
-                 hi, smoothstep(0.55,0.98,l));
-    return mix(c, g, 0.6);
-  } else if(mode==2){ // Teal-Orange Film
-    vec3 teal = vec3(0.20,0.85,0.85);
-    vec3 orange = vec3(1.0,0.55,0.20);
-    vec3 g = mix(teal, orange, smoothstep(0.35,0.8,l));
-    return mix(c, g, 0.55);
-  } else { // Indigo Twilight
-    vec3 ind = vec3(0.25,0.28,0.65);
-    vec3 rose= vec3(0.95,0.45,0.65);
-    vec3 g = mix(ind, rose, smoothstep(0.25,0.95,l));
-    return mix(c, g, 0.5);
-  }
-}
-
-void main(){
-  vec3 scene = texture(uScene, vUV).rgb;
-  vec3 bloom = texture(uBloom, vUV).rgb * uBloomStrength;
-
-  vec3 col = filmic(scene) + bloom;
-  col = filmic(col);
-  col = lutMap(col, uLUT);
-
-  fragColor = vec4(col, 1.0);
-}
-`;
-
-/* ---------- GL helpers ---------- */
-function compile(type, src){
+/* ------------------ Shader Loader ------------------ */
+function compileShader(type, src){
   const sh = gl.createShader(type);
   gl.shaderSource(sh, src);
   gl.compileShader(sh);
-  if(!gl.getShaderParameter(sh, gl.COMPILE_STATUS)){
+  if(!gl.getShaderParameter(sh, gl.COMPILE_STATUS))
     console.error(gl.getShaderInfoLog(sh));
-  }
   return sh;
 }
-function program(vsSrc, fsSrc){
-  const p = gl.createProgram();
-  gl.attachShader(p, compile(gl.VERTEX_SHADER, vsSrc));
-  gl.attachShader(p, compile(gl.FRAGMENT_SHADER, fsSrc));
-  gl.linkProgram(p);
-  if(!gl.getProgramParameter(p, gl.LINK_STATUS)){
-    console.error(gl.getProgramInfoLog(p));
-  }
-  return p;
-}
 
-/* ---------- Programs ---------- */
-const sceneProg   = program(VERT, SCENE_FRAG);
-const extractProg = program(VERT, BLOOM_EXTRACT_FRAG);
-const blurProg    = program(VERT, BLUR_FRAG);
-const composeProg = program(VERT, COMPOSE_FRAG);
+const vs = compileShader(gl.VERTEX_SHADER, vertexShaderSrc);
+const fs = compileShader(gl.FRAGMENT_SHADER, fragmentShaderSrc);
 
-/* ---------- Fullscreen quad ---------- */
+const prog = gl.createProgram();
+gl.attachShader(prog, vs);
+gl.attachShader(prog, fs);
+gl.linkProgram(prog);
+gl.useProgram(prog);
+
+/* ------------------ Fullscreen Quad ------------------ */
 const quad = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, quad);
-gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+  -1,-1,  1,-1,  -1,1,  1,1
+]), gl.STATIC_DRAW);
+
 gl.enableVertexAttribArray(0);
 gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);
 
-/* ---------- Framebuffers / Textures ---------- */
-let sceneFBO, sceneTex;
-let bA_FBO, bA_Tex, bB_FBO, bB_Tex; // bloom ping-pong (downscaled)
+/* ------------------ Uniform Handles ------------------ */
+const uTime = gl.getUniformLocation(prog, "time");
+const uSwirl = gl.getUniformLocation(prog, "swirlPower");
+const uDensity = gl.getUniformLocation(prog, "density");
+const uLight = gl.getUniformLocation(prog, "lightPower");
+const uWarm = gl.getUniformLocation(prog, "warm");
+const uBias = gl.getUniformLocation(prog, "pareidoliaBias");
+const uRes = gl.getUniformLocation(prog, "resolution");
 
-function mkTex(w,h, linear=true){
-  const tex = gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D, tex);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, linear?gl.LINEAR:gl.NEAREST);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, linear?gl.LINEAR:gl.NEAREST);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, w, h, 0, gl.RGBA, gl.HALF_FLOAT, null);
-  return tex;
-}
-function mkFBO(tex){
-  const fb = gl.createFramebuffer();
-  gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
-  const ok = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE;
-  if(!ok) console.error('FBO not complete');
-  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-  return fb;
-}
-function initTargets(){
-  const w = glCanvas.width, h = glCanvas.height;
-  // Scene target
-  sceneTex && gl.deleteTexture(sceneTex);
-  sceneFBO && gl.deleteFramebuffer(sceneFBO);
-  sceneTex = mkTex(w,h,true);
-  sceneFBO = mkFBO(sceneTex);
-
-  // Bloom downsized to improve perf
-  const bw = Math.max(1, w>>1), bh = Math.max(1, h>>1);
-  [bA_Tex,bB_Tex].forEach(t=>t && gl.deleteTexture(t));
-  [bA_FBO,bB_FBO].forEach(f=>f && gl.deleteFramebuffer(f));
-  bA_Tex = mkTex(bw,bh,true); bA_FBO = mkFBO(bA_Tex);
-  bB_Tex = mkTex(bw,bh,true); bB_FBO = mkFBO(bB_Tex);
-}
-initTargets();
-
-/* ---------- Uniform locations ---------- */
-const loc = {
-  // scene
-  scene: {
-    uRes: gl.getUniformLocation(sceneProg,'uRes'),
-    uTime: gl.getUniformLocation(sceneProg,'uTime'),
-    uSwirl: gl.getUniformLocation(sceneProg,'uSwirl'),
-    uDensity: gl.getUniformLocation(sceneProg,'uDensity'),
-    uLight: gl.getUniformLocation(sceneProg,'uLight'),
-    uWarm: gl.getUniformLocation(sceneProg,'uWarm'),
-    uBias: gl.getUniformLocation(sceneProg,'uBias'),
-    uTilt: gl.getUniformLocation(sceneProg,'uTilt'),
-    uParallax: gl.getUniformLocation(sceneProg,'uParallax'),
-    uQuality: gl.getUniformLocation(sceneProg,'uQuality'),
-  },
-  extract: {
-    uTex: gl.getUniformLocation(extractProg,'uTex'),
-    uThreshold: gl.getUniformLocation(extractProg,'uThreshold'),
-  },
-  blur: {
-    uTex: gl.getUniformLocation(blurProg,'uTex'),
-    uDir: gl.getUniformLocation(blurProg,'uDir'),
-  },
-  comp: {
-    uScene: gl.getUniformLocation(composeProg,'uScene'),
-    uBloom: gl.getUniformLocation(composeProg,'uBloom'),
-    uBloomStrength: gl.getUniformLocation(composeProg,'uBloomStrength'),
-    uLUT: gl.getUniformLocation(composeProg,'uLUT'),
-  }
+/* ------------------ UI Binding ------------------ */
+const ui = {
+  swirl: document.getElementById("swirl"),
+  density: document.getElementById("density"),
+  light: document.getElementById("light"),
+  warm: document.getElementById("warm"),
+  bias: document.getElementById("bias"),
+  anim: document.getElementById("anim")
 };
 
-/* ---------- UI bindings ---------- */
-const UI = {
-  swirl: document.getElementById('swirl'),
-  density: document.getElementById('density'),
-  light: document.getElementById('light'),
-  warm: document.getElementById('warm'),
-  bias: document.getElementById('bias'),
-  bloom: document.getElementById('bloom'),
-  threshold: document.getElementById('threshold'),
-  parallax: document.getElementById('parallax'),
-  lut: document.getElementById('lut'),
-  quality: document.getElementById('quality'),
-  toggle: document.getElementById('toggle'),
-  shot: document.getElementById('shot'),
-  clear: document.getElementById('clear'),
-  export: document.getElementById('export'),
-};
-
-function syncLabels(){
-  document.getElementById('v-swirl').textContent = (+UI.swirl.value).toFixed(2);
-  document.getElementById('v-density').textContent = (+UI.density.value).toFixed(2);
-  document.getElementById('v-light').textContent = (+UI.light.value).toFixed(2);
-  document.getElementById('v-warm').textContent = (+UI.warm.value).toFixed(2);
-  document.getElementById('v-bias').textContent = (+UI.bias.value).toFixed(2);
-  document.getElementById('v-bloom').textContent = (+UI.bloom.value).toFixed(2);
-  document.getElementById('v-thresh').textContent = (+UI.threshold.value).toFixed(2);
-  document.getElementById('v-parallax').textContent = (+UI.parallax.value).toFixed(2);
-}
-['input','change'].forEach(evt=>{
-  ['swirl','density','light','warm','bias','bloom','threshold','parallax','lut','quality']
-    .forEach(id=>UI[id].addEventListener(evt, syncLabels));
-});
-syncLabels();
-
-/* ---------- Mouse parallax ---------- */
-let tilt = {x:0,y:0};
-window.addEventListener('pointermove', (e)=>{
-  const nx = (e.clientX / innerWidth) * 2 - 1;
-  const ny = (e.clientY / innerHeight) * 2 - 1;
-  // ease
-  tilt.x += (nx - tilt.x)*0.08;
-  tilt.y += (ny - tilt.y)*0.08;
-});
-
-/* ---------- Animation loop ---------- */
-let running = true;
-UI.toggle.addEventListener('click', ()=>{
-  running = !running;
-  UI.toggle.textContent = running ? 'Pause' : 'Play';
-});
-window.addEventListener('keydown',(e)=>{
-  if(e.code==='Space'){ e.preventDefault(); UI.toggle.click(); }
-  if((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='s'){ e.preventDefault(); takeScreenshot(); }
-});
-
+/* ------------------ Render Loop ------------------ */
 let t0 = performance.now();
-function draw(){
-  const now = performance.now();
-  const dt = (now - t0) * 0.001;
-  const time = running ? dt : 0.0;
 
-  /* Scene pass */
-  gl.useProgram(sceneProg);
-  gl.bindFramebuffer(gl.FRAMEBUFFER, sceneFBO);
-  gl.viewport(0,0,glCanvas.width, glCanvas.height);
-  gl.clearColor(0,0,0,1); gl.clear(gl.COLOR_BUFFER_BIT);
-  gl.uniform2f(loc.scene.uRes, glCanvas.width, glCanvas.height);
-  gl.uniform1f(loc.scene.uTime, time);
-  gl.uniform1f(loc.scene.uSwirl, +UI.swirl.value);
-  gl.uniform1f(loc.scene.uDensity, +UI.density.value);
-  gl.uniform1f(loc.scene.uLight, +UI.light.value);
-  gl.uniform1f(loc.scene.uWarm, +UI.warm.value);
-  gl.uniform1f(loc.scene.uBias, +UI.bias.value);
-  gl.uniform2f(loc.scene.uTilt, tilt.x, -tilt.y);
-  gl.uniform1f(loc.scene.uParallax, +UI.parallax.value);
-  gl.uniform1i(loc.scene.uQuality, +UI.quality.value);
+function render() {
+  const t = ui.anim.checked ? (performance.now() - t0) * 0.001 : 0.0;
+
+  gl.uniform1f(uTime, t);
+  gl.uniform1f(uSwirl, parseFloat(ui.swirl.value));
+  gl.uniform1f(uDensity, parseFloat(ui.density.value));
+  gl.uniform1f(uLight, parseFloat(ui.light.value));
+  gl.uniform1f(uWarm, parseFloat(ui.warm.value));
+  gl.uniform1f(uBias, parseFloat(ui.bias.value));
+  gl.uniform2f(uRes, canvas.width, canvas.height);
+
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-
-  /* Bloom: extract bright → blur (ping-pong) */
-  const bw = glCanvas.width>>1, bh = glCanvas.height>>1;
-
-  // downsample + threshold into bA
-  gl.useProgram(extractProg);
-  gl.bindFramebuffer(gl.FRAMEBUFFER, bA_FBO);
-  gl.viewport(0,0,bw,bh);
-  gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, sceneTex);
-  gl.uniform1i(loc.extract.uTex, 0);
-  gl.uniform1f(loc.extract.uThreshold, +UI.threshold.value);
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-
-  // blur passes
-  gl.useProgram(blurProg);
-  const passes = 4;
-  for(let i=0;i<passes;i++){
-    // horizontal
-    gl.bindFramebuffer(gl.FRAMEBUFFER, bB_FBO);
-    gl.bindTexture(gl.TEXTURE_2D, bA_Tex);
-    gl.uniform1i(loc.blur.uTex, 0);
-    gl.uniform2f(loc.blur.uDir, 1/bw, 0);
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-
-    // vertical
-    gl.bindFramebuffer(gl.FRAMEBUFFER, bA_FBO);
-    gl.bindTexture(gl.TEXTURE_2D, bB_Tex);
-    gl.uniform2f(loc.blur.uDir, 0, 1/bh);
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-  }
-
-  /* Composite to screen */
-  gl.useProgram(composeProg);
-  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-  gl.viewport(0,0,glCanvas.width, glCanvas.height);
-  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, sceneTex);
-  gl.uniform1i(loc.comp.uScene, 0);
-  gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, bA_Tex);
-  gl.uniform1i(loc.comp.uBloom, 1);
-  gl.uniform1f(loc.comp.uBloomStrength, +UI.bloom.value);
-  gl.uniform1i(loc.comp.uLUT, +UI.lut.value);
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-
-  requestAnimationFrame(draw);
-}
-resize(); draw();
-
-/* ============================================================
-   Annotation overlay (2D canvas): drag to create rectangle,
-   prompt for label, store in localStorage, draw nicely.
-============================================================ */
-const ctx = annCanvas.getContext('2d');
-let anns = [];
-let dragging = null; // {x0,y0,x1,y1}
-const LS_KEY = 'pareidolia:annotations';
-
-function loadAnns(){
-  try{ anns = JSON.parse(localStorage.getItem(LS_KEY) || '[]'); }
-  catch{ anns = []; }
-  redrawAnns();
-}
-function saveAnns(){
-  localStorage.setItem(LS_KEY, JSON.stringify(anns));
-}
-function redrawAnns(preview){
-  ctx.clearRect(0,0,annCanvas.width, annCanvas.height);
-
-  // existing
-  ctx.lineWidth = 1.5;
-  ctx.setLineDash([6,4]);
-  anns.forEach(a=>{
-    ctx.strokeStyle = 'rgba(255,255,255,0.8)';
-    ctx.fillStyle = 'rgba(255,255,255,0.06)';
-    ctx.strokeRect(a.x, a.y, a.w, a.h);
-    ctx.fillRect(a.x, a.y, a.w, a.h);
-
-    // label
-    const label = a.label || '';
-    if(label){
-      ctx.setLineDash([]);
-      ctx.fillStyle = 'rgba(0,0,0,0.6)';
-      ctx.strokeStyle = 'rgba(255,255,255,0.85)';
-      ctx.lineWidth = 1;
-      ctx.font = '12px ui-sans-serif, system-ui';
-      const pad=6;
-      const m = ctx.measureText(label);
-      const lw = m.width + pad*2;
-      const lh = 18;
-      const lx = a.x, ly = a.y + a.h + 6;
-      ctx.fillRect(lx, ly, lw, lh);
-      ctx.strokeRect(lx, ly, lw, lh);
-      ctx.fillStyle = '#ffffff';
-      ctx.fillText(label, lx+pad, ly+12.5);
-      ctx.setLineDash([6,4]);
-    }
-  });
-
-  // preview drag
-  if(preview){
-    const x = Math.min(preview.x0, preview.x1);
-    const y = Math.min(preview.y0, preview.y1);
-    const w = Math.abs(preview.x1 - preview.x0);
-    const h = Math.abs(preview.y1 - preview.y0);
-    ctx.strokeStyle = 'rgba(119,225,255,0.9)';
-    ctx.fillStyle = 'rgba(119,225,255,0.08)';
-    ctx.setLineDash([6,4]);
-    ctx.lineWidth=1.5;
-    ctx.strokeRect(x,y,w,h);
-    ctx.fillRect(x,y,w,h);
-  }
+  requestAnimationFrame(render);
 }
 
-annCanvas.addEventListener('pointerdown', (e)=>{
-  dragging = {x0:e.clientX, y0:e.clientY, x1:e.clientX, y1:e.clientY};
-});
-window.addEventListener('pointermove', (e)=>{
-  if(!dragging) return;
-  dragging.x1 = e.clientX; dragging.y1 = e.clientY;
-  redrawAnns(dragging);
-});
-window.addEventListener('pointerup', ()=>{
-  if(!dragging) return;
-  const x = Math.min(dragging.x0, dragging.x1);
-  const y = Math.min(dragging.y0, dragging.y1);
-  const w = Math.abs(dragging.x1 - dragging.x0);
-  const h = Math.abs(dragging.y1 - dragging.y0);
-  dragging = null;
-  if(w<10 || h<10){ redrawAnns(); return; }
-  const label = prompt('What do you see?');
-  anns.push({x,y,w,h,label:label||''});
-  saveAnns(); redrawAnns();
-});
-
-UI.clear.addEventListener('click', ()=>{
-  if(confirm('Clear all annotations?')){
-    anns = []; saveAnns(); redrawAnns();
-  }
-});
-UI.export.addEventListener('click', ()=>{
-  const data = JSON.stringify(anns, null, 2);
-  const blob = new Blob([data], {type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'annotations.json';
-  a.click();
-  URL.revokeObjectURL(a.href);
-});
-loadAnns();
-
-/* ============================================================
-   Screenshot (GL + annotations composited)
-============================================================ */
-function takeScreenshot(){
-  const tmp = document.createElement('canvas');
-  tmp.width = glCanvas.width; tmp.height = glCanvas.height;
-  const tctx = tmp.getContext('2d');
-
-  // draw GL (devicePixelRatio aware)
-  tctx.drawImage(glCanvas, 0, 0);
-
-  // scale annotation canvas to GL size
-  tctx.drawImage(annCanvas, 0, 0, annCanvas.width, annCanvas.height, 0, 0, tmp.width, tmp.height);
-
-  const link = document.createElement('a');
-  link.download = 'pareidolia-firefly.png';
-  link.href = tmp.toDataURL('image/png');
-  link.click();
-}
-UI.shot.addEventListener('click', takeScreenshot);
+render();
 </script>
 </body>
 </html>
