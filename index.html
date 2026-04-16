@@ -1,623 +1,454 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Pareidolia Lab – Clouds</title>
-<style>
-  :root {
-    --bg: #0d0f12;
-    --panel: #151922;
-    --text: #e7ecf3;
-    --muted: #9aa7b1;
-    --accent: #5ad1ff;
-    --accent-2: #9f7bff;
-    --danger: #ff5a7a;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; color: var(--text); background: var(--bg);
-    font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-    display: grid; grid-template-columns: 320px 1fr; min-height: 100dvh;
-  }
-  aside {
-    padding: 16px; background: linear-gradient(180deg, var(--panel), #0f1320);
-    border-right: 1px solid #1f2230; display: flex; flex-direction: column; gap: 12px;
-  }
-  main { position: relative; display: grid; place-items: center; }
-  #canvas { width: 100%; height: 100%; display: block; background: transparent; }
-  .row { display: flex; align-items: center; gap: 8px; }
-  .col { display: flex; flex-direction: column; gap: 8px; }
-  label { font-weight: 600; }
-  input[type="range"] { width: 100%; }
-  input[type="text"], input[type="number"] {
-    width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #2b3245;
-    background: #0f1320; color: var(--text);
-  }
-  button {
-    padding: 8px 12px; border-radius: 8px; border: 1px solid #2b3245; 
-    background: #11162a; color: var(--text); cursor: pointer;
-  }
-  button.primary { border-color: #2a3750; background: #122036; color: #dbf4ff; }
-  button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .kbd { padding: 2px 6px; border: 1px solid #2b3245; border-radius: 6px; color: var(--muted); }
-  .muted { color: var(--muted); }
-  .divider { height: 1px; background: #1f2230; margin: 8px 0; }
-  .badge { background: #0f1b2f; color: #cfe9ff; padding: 2px 8px; border-radius: 999px; font-size: 12px; }
-  .legend { font-size: 12px; color: var(--muted); }
-  #overlayToggleLabel { display: inline-flex; align-items: center; gap: 6px; }
-  .pill {
-    display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 999px; 
-    background: #12172a; border: 1px solid #2b3245; color: var(--muted);
-  }
-  .callout {
-    border: 1px dashed #34405f; padding: 10px; border-radius: 10px; background: #0e1427;
-  }
-  .hint { color: #b2c7ff; }
-  .annotation {
-    position: absolute; border: 1px dashed rgba(255,255,255,0.6); pointer-events: none; 
-    background: rgba(255,255,255,0.05);
-  }
-  .annotation::after {
-    content: attr(data-label);
-    position: absolute; bottom: -1.6em; left: 0; font-size: 12px; 
-    background: rgba(0,0,0,0.6); padding: 2px 6px; border-radius: 6px;
-    color: #fff;
-  }
-  footer {
-    margin-top: auto; font-size: 12px; color: var(--muted);
-  }
-  @media (max-width: 880px) {
-    body { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
-    aside { order: 1; }
-    main { order: 2; height: calc(100dvh - 420px); }
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pareidolia Lab Elite – Generative Visions</title>
+  <meta name="description" content="Explore the boundaries of perception with high-fidelity generative cloud patterns.">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;600;700&display=swap');
+
+    :root {
+      --bg: #05070a;
+      --surface: rgba(13, 17, 23, 0.7);
+      --surface-border: rgba(255, 255, 255, 0.1);
+      --text: #f0f6fc;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --accent-glow: rgba(88, 166, 255, 0.3);
+      --accent-secondary: #bc8cff;
+      --danger: #f85149;
+      --glass: blur(12px) saturate(180%);
+      --radius: 12px;
+      --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+      --font-heading: 'Outfit', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-main);
+      overflow: hidden;
+      height: 100dvh;
+      display: flex;
+    }
+
+    aside {
+      width: 340px;
+      height: 100%;
+      background: var(--surface);
+      backdrop-filter: var(--glass);
+      -webkit-backdrop-filter: var(--glass);
+      border-right: 1px solid var(--surface-border);
+      display: flex;
+      flex-direction: column;
+      z-index: 10;
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .sidebar-content {
+      padding: 24px;
+      overflow-y: auto;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    header h1 {
+      font-family: var(--font-heading);
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #fff 0%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge {
+      font-size: 0.7rem;
+      background: rgba(88, 166, 255, 0.15);
+      color: var(--accent);
+      padding: 2px 8px;
+      border-radius: 99px;
+      border: 1px solid rgba(88, 166, 255, 0.3);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .control-group { display: flex; flex-direction: column; gap: 12px; }
+    .control-group label {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .value-display {
+      font-family: monospace;
+      color: var(--accent);
+      background: rgba(88, 166, 255, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      background: var(--accent);
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 0 10px var(--accent-glow);
+    }
+
+    input[type="text"] {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.9rem;
+    }
+
+    .btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--surface-border);
+      color: var(--text);
+      padding: 10px 16px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 500;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2); }
+    .btn-primary { background: var(--accent); color: #000; border: none; }
+    .btn-icon { width: 40px; height: 40px; padding: 0; border-radius: 50%; }
+
+    main { flex-grow: 1; position: relative; background: #000; }
+    #canvas-container { width: 100%; height: 100%; }
+    canvas { display: block; }
+
+    .overlay-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+    .annotation-svg { width: 100%; height: 100%; pointer-events: all; }
+    .annotation-rect { fill: rgba(88, 166, 255, 0.05); stroke: var(--accent); stroke-width: 2; stroke-dasharray: 4; }
+    .annotation-label { fill: #fff; font-size: 12px; font-weight: 500; }
+
+    .fade-in { animation: fadeIn 0.8s ease-out forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    @media (max-width: 768px) {
+      body { flex-direction: column; }
+      aside { width: 100%; height: auto; max-height: 40%; border-right: none; border-bottom: 1px solid var(--surface-border); }
+    }
+  </style>
 </head>
 <body>
   <aside aria-label="Controls">
-    <h2>Pareidolia Lab <span class="badge">alpha</span></h2>
-    <div class="legend">Use ambiguous noise + subtle bias to explore “seeing” faces in randomness.</div>
+    <div class="sidebar-content fade-in">
+      <header>
+        <h1>Pareidolia Lab <span class="badge">Elite</span></h1>
+        <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 4px;">Ambiguous noise + subtle cognitive bias.</p>
+      </header>
 
-    <div class="divider"></div>
-
-    <div class="col" role="group" aria-labelledby="seed-label">
-      <label id="seed-label" for="seed">Seed</label>
-      <div class="row">
-        <input id="seed" type="text" placeholder="e.g., owl-42" />
-        <button id="randomSeed" title="Randomize seed" aria-label="Randomize seed">🎲</button>
+      <div class="control-group">
+        <label for="seed-input">Exploration Seed <span class="value-display" id="seed-val"></span></label>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="seed-input" placeholder="Enter seed..." style="flex-grow: 1;">
+          <button class="btn btn-icon" id="random-seed" title="Randomize Seed">🎲</button>
+        </div>
       </div>
-      <div class="legend">Shareable via <code>?seed=your-seed</code></div>
+
+      <div class="control-group">
+        <label for="scale">Noise Scale <span class="value-display" id="scale-val">2.50</span></label>
+        <input type="range" id="scale" min="0.5" max="10.0" step="0.01" value="2.50">
+      </div>
+
+      <div class="control-group">
+        <label for="octaves">Complexity (Octaves) <span class="value-display" id="octaves-val">5</span></label>
+        <input type="range" id="octaves" min="1" max="8" step="1" value="5">
+      </div>
+
+      <div class="control-group">
+        <label for="contrast">Cloud Contrast <span class="value-display" id="contrast-val">1.60</span></label>
+        <input type="range" id="contrast" min="0.5" max="3.0" step="0.01" value="1.60">
+      </div>
+
+      <div class="control-group">
+        <label for="speed">Drift Speed <span class="value-display" id="speed-val">0.25</span></label>
+        <input type="range" id="speed" min="0" max="2.0" step="0.01" value="0.25">
+      </div>
+
+      <div class="control-group" style="background: rgba(88, 166, 255, 0.05); padding: 16px; border-radius: 12px; border: 1px solid rgba(88, 166, 255, 0.1);">
+        <label for="bias">Pareidolia Bias <span class="value-display" id="bias-val">0.30</span></label>
+        <input type="range" id="bias" min="0" max="1.0" step="0.01" value="0.30">
+        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 8px;">Subtly injects facial patterns into the noise flow.</p>
+      </div>
+
+      <div class="control-group" id="annotations-section" style="display: none;">
+        <label>Discoveries</label>
+        <div id="annotations-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px;">
+        <button class="btn btn-primary" id="play-pause">Pause</button>
+        <button class="btn" id="raw-toggle">Raw Mode</button>
+        <button class="btn" id="snapshot">Snapshot</button>
+        <button class="btn" id="clear-annotations" style="color: var(--danger);">Clear All</button>
+      </div>
     </div>
-
-    <div class="divider"></div>
-
-    <div class="col" role="group" aria-labelledby="noise-label">
-      <label id="noise-label">Noise</label>
-      <div>
-        <div>Scale <span id="scaleVal" class="muted"></span></div>
-        <input id="scale" type="range" min="8" max="256" step="1" value="96" />
-      </div>
-      <div>
-        <div>Octaves <span id="octavesVal" class="muted"></span></div>
-        <input id="octaves" type="range" min="1" max="6" step="1" value="4" />
-      </div>
-      <div>
-        <div>Contrast <span id="contrastVal" class="muted"></span></div>
-        <input id="contrast" type="range" min="0.5" max="3" step="0.01" value="1.2" />
-      </div>
-      <div>
-        <div>Speed <span id="speedVal" class="muted"></span></div>
-        <input id="speed" type="range" min="0" max="2" step="0.01" value="0.35" />
-      </div>
-    </div>
-
-    <div class="divider"></div>
-
-    <div class="col" role="group" aria-labelledby="bias-label">
-      <label id="bias-label">Pareidolia Bias</label>
-      <div class="row">
-        <span>Strength</span>
-        <input id="bias" type="range" min="0" max="1" step="0.01" value="0.18" />
-      </div>
-      <div class="row">
-        <label id="overlayToggleLabel" class="pill">
-          <input id="showBiasOverlay" type="checkbox" />
-          Show bias overlay
-        </label>
-        <button id="toggleRaw" class="primary" title="Toggle raw vs biased (R)">Raw</button>
-      </div>
-      <div class="legend">Bias subtly adds low-opacity “eye + mouth” hints at random positions.</div>
-    </div>
-
-    <div class="divider"></div>
-
-    <div class="row" role="group" aria-label="Actions">
-      <button id="playPause" class="primary" title="Play/Pause (Space)">Pause</button>
-      <button id="snapshot" title="Save PNG">Snapshot</button>
-      <button id="clearAnn" title="Clear annotations" style="margin-left:auto;color:#ffb0bf;border-color:#5b2a36;background:#1a0f15;">Clear</button>
-    </div>
-
-    <div class="callout">
-      <div class="hint">Shortcuts:</div>
-      <div class="legend">
-        <span class="kbd">Space</span> Play/Pause · 
-        <span class="kbd">R</span> Raw/Biased · 
-        <span class="kbd">B</span> Bias overlay
-      </div>
-      <div class="legend">Drag on canvas to annotate; press Enter to save the label.</div>
-    </div>
-
-    <footer>
-      <div>Local only. No uploads. Annotations saved in your browser.</div>
-    </footer>
   </aside>
 
   <main>
-    <canvas id="canvas" aria-label="Pareidolia canvas"></canvas>
-    <div id="annLayer" aria-hidden="true"></div>
+    <div id="canvas-container"></div>
+    <div class="overlay-layer">
+      <svg id="annotation-svg" class="annotation-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
   </main>
 
-<script>
-/* ========== Utilities: seeded RNG, helpers ========== */
-function mulberry32(a) {
-  return function() {
-    let t = a += 0x6D2B79F5;
-    t = Math.imul(t ^ t >>> 15, t | 1);
-    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-    return ((t ^ t >>> 14) >>> 0) / 4294967296;
-  };
-}
-function hashStringToInt(str) {
-  let h = 2166136261;
-  for (let i=0; i<str.length; i++) {
-    h ^= str.charCodeAt(i);
-    h += (h<<1) + (h<<4) + (h<<7) + (h<<8) + (h<<24);
-  }
-  return h >>> 0;
-}
-function lerp(a,b,t){ return a + (b-a)*t; }
-function clamp(x,a,b){ return Math.max(a, Math.min(b, x)); }
+  <!-- External Library -->
+  <script src="https://unpkg.com/three@0.150.1/build/three.min.js"></script>
 
-/* ========== Perlin noise (2D) + fBM ========== */
-function makePerlin2D(seed) {
-  const rand = mulberry32(seed);
-  const p = new Uint8Array(512);
-  const perm = new Uint8Array(256);
-  for (let i=0; i<256; i++) perm[i] = i;
-  // Fisher–Yates shuffle
-  for (let i=255; i>0; i--) {
-    const j = Math.floor(rand()*(i+1));
-    [perm[i], perm[j]] = [perm[j], perm[i]];
-  }
-  for (let i=0; i<512; i++) p[i] = perm[i & 255];
+  <script>
+    // --- STATE ---
+    const state = {
+      seed: 'mystic-cloud-123',
+      running: true,
+      biasStrength: 0.3,
+      noiseScale: 2.5,
+      noiseOctaves: 5,
+      contrast: 1.6,
+      speed: 0.25,
+      showBiasOverlay: false,
+      rawMode: false,
+      annotations: [],
+      listeners: new Set(),
+      update(payload) {
+        Object.assign(this, payload);
+        this.notify();
+        if (payload.annotations) this.saveAnnotations();
+        const url = new URL(window.location);
+        const params = ['seed', 'noiseScale', 'noiseOctaves', 'contrast', 'speed', 'biasStrength', 'rawMode'];
+        params.forEach(p => { if (this[p] !== undefined) url.searchParams.set(p, this[p]); });
+        window.history.replaceState({}, '', url);
+      },
+      subscribe(cb) { this.listeners.add(cb); return () => this.listeners.delete(cb); },
+      notify() { this.listeners.forEach(cb => cb(this)); },
+      saveAnnotations() { localStorage.setItem(`pareidolia_ann_${this.seed}`, JSON.stringify(this.annotations)); },
+      loadAnnotations() {
+        const saved = localStorage.getItem(`pareidolia_ann_${this.seed}`);
+        this.annotations = saved ? JSON.parse(saved) : [];
+        this.notify();
+      },
+      randomizeSeed() {
+        const adj = ['silent', 'lucky', 'odd', 'fuzzy', 'noisy', 'gentle', 'mystic', 'sleepy', 'weird', 'blur'];
+        const nouns = ['owl', 'cloud', 'rock', 'toast', 'tree', 'wave', 'smoke', 'stain', 'sky', 'dust'];
+        this.update({ seed: `${adj[Math.floor(Math.random()*10)]}-${nouns[Math.floor(Math.random()*10)]}-${Math.floor(Math.random()*1e4)}` });
+      }
+    };
 
-  const grad2 = [
-    [ 1, 1],[ -1, 1],[ 1,-1],[ -1,-1],
-    [ 1, 0],[ -1, 0],[ 0, 1],[ 0,-1],
-  ];
-  function dot(g, x, y){ return g[0]*x + g[1]*y; }
-  function fade(t){ return t*t*t*(t*(t*6 - 15) + 10); }
-  function noise2D(x, y){
-    const X = Math.floor(x) & 255;
-    const Y = Math.floor(y) & 255;
-    const xf = x - Math.floor(x);
-    const yf = y - Math.floor(y);
-    const u = fade(xf);
-    const v = fade(yf);
+    // --- INITIALIZE STATE FROM URL ---
+    const urlParams = new URLSearchParams(window.location.search);
+    const paramsMap = { seed:'seed', scale:'noiseScale', octaves:'noiseOctaves', contrast:'contrast', speed:'speed', bias:'biasStrength', raw:'rawMode' };
+    Object.entries(paramsMap).forEach(([urlKey, stateKey]) => {
+      const val = urlParams.get(urlKey);
+      if (val !== null) {
+        if (stateKey === 'seed') state[stateKey] = val;
+        else if (stateKey === 'rawMode') state[stateKey] = val === 'true';
+        else state[stateKey] = parseFloat(val);
+      }
+    });
 
-    const aa = p[X + p[Y]], ab = p[X + p[Y+1]];
-    const ba = p[X+1 + p[Y]], bb = p[X+1 + p[Y+1]];
-
-    const gAA = grad2[aa & 7], gBA = grad2[ba & 7];
-    const gAB = grad2[ab & 7], gBB = grad2[bb & 7];
-
-    const x1 = lerp(dot(gAA, xf,   yf),   dot(gBA, xf-1, yf),   u);
-    const x2 = lerp(dot(gAB, xf,   yf-1), dot(gBB, xf-1, yf-1), u);
-    return lerp(x1, x2, v); // ~[-1,1]
-  }
-  return noise2D;
-}
-
-function fbm(noise2D, x, y, octaves=4, lacunarity=2.0, gain=0.5) {
-  let amp = 1.0, freq = 1.0, sum = 0.0, norm = 0.0;
-  for (let i=0; i<octaves; i++) {
-    sum += amp * noise2D(x*freq, y*freq);
-    norm += amp;
-    amp *= gain;
-    freq *= lacunarity;
-  }
-  return sum / norm; // approx [-1,1]
-}
-
-/* ========== Pareidolia bias: subtle face-like templates ========== */
-function drawFaceHint(ctx, cx, cy, size, rot, alpha, seedRand) {
-  ctx.save();
-  ctx.translate(cx, cy);
-  ctx.rotate(rot);
-  ctx.globalAlpha = alpha;
-  // Eyes: two soft blobs
-  const eyeOffset = size * 0.22;
-  const eyeR = size * 0.12;
-  const mouthW = size * 0.55;
-  const mouthY = size * 0.18;
-
-  // soft radial eyes
-  const drawBlob = (x, y, r) => {
-    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-    // darker center fading to transparent
-    g.addColorStop(0.0, "rgba(0,0,0,0.35)");
-    g.addColorStop(1.0, "rgba(0,0,0,0.0)");
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI*2);
-    ctx.fill();
-  };
-  drawBlob(-eyeOffset, 0, eyeR);
-  drawBlob( eyeOffset, 0, eyeR * (0.9 + seedRand()*0.2));
-
-  // Mouth: shallow dark arc
-  ctx.strokeStyle = "rgba(255,255,255,0.28)";
-  ctx.lineWidth = Math.max(1, size*0.06);
-  ctx.beginPath();
-  const curve = size * (0.08 + seedRand()*0.06);
-  ctx.moveTo(-mouthW/2, mouthY);
-  ctx.quadraticCurveTo(0, mouthY + curve, mouthW/2, mouthY);
-  ctx.stroke();
-
-  ctx.restore();
-}
-
-function sprinkleBias(ctx, w, h, strength, seedRand) {
-  if (strength <= 0) return [];
-  const count = Math.floor(lerp(2, 12, strength)); // number of hints
-  const placed = [];
-  for (let i=0; i<count; i++) {
-    const cx = seedRand() * w;
-    const cy = seedRand() * h;
-    const size = lerp(24, Math.min(w,h)/3, seedRand()**2);
-    const rot = (seedRand()*2 - 1) * 0.6; // +/- ~34°
-    const alpha = 0.08 + strength*0.2 + seedRand()*0.04;
-    drawFaceHint(ctx, cx, cy, size, rot, alpha, seedRand);
-    placed.push({cx, cy, size, rot});
-  }
-  return placed; // for optional overlay
-}
-
-/* ========== App state & DOM ========== */
-const els = {
-  canvas: document.getElementById('canvas'),
-  annLayer: document.getElementById('annLayer'),
-  seed: document.getElementById('seed'),
-  randomSeed: document.getElementById('randomSeed'),
-  scale: document.getElementById('scale'),
-  octaves: document.getElementById('octaves'),
-  contrast: document.getElementById('contrast'),
-  speed: document.getElementById('speed'),
-  bias: document.getElementById('bias'),
-  showBiasOverlay: document.getElementById('showBiasOverlay'),
-  toggleRaw: document.getElementById('toggleRaw'),
-  playPause: document.getElementById('playPause'),
-  snapshot: document.getElementById('snapshot'),
-  clearAnn: document.getElementById('clearAnn'),
-  scaleVal: document.getElementById('scaleVal'),
-  octavesVal: document.getElementById('octavesVal'),
-  contrastVal: document.getElementById('contrastVal'),
-  speedVal: document.getElementById('speedVal'),
-};
-
-const state = {
-  running: true,
-  rawMode: false, // when true: don't apply bias
-  annotations: [],
-  drag: null, // {x0,y0,x1,y1}
-};
-
-function getQuerySeed() {
-  const u = new URL(location.href);
-  return u.searchParams.get('seed');
-}
-function setQuerySeed(val) {
-  const u = new URL(location.href);
-  if (val) u.searchParams.set('seed', val);
-  else u.searchParams.delete('seed');
-  history.replaceState({}, '', u.toString());
-}
-
-function randomSeedString() {
-  const nouns = ['owl','cloud','rock','toast','tree','wave','smoke','stain','sky','dust'];
-  const adj = ['silent','lucky','odd','fuzzy','noisy','gentle','mystic','sleepy','weird','blur'];
-  const r = Math.floor(Math.random()*10);
-  return `${adj[r]}-${nouns[(r*7+3)%10]}-${Math.floor(Math.random()*1e6)}`;
-}
-
-/* ========== Canvas setup & render loop ========== */
-const ctx = els.canvas.getContext('2d', { alpha: false, willReadFrequently: false });
-let off = document.createElement('canvas');
-let offCtx = off.getContext('2d');
-
-function resize() {
-  const dpr = Math.min(2, window.devicePixelRatio || 1);
-  const w = els.canvas.clientWidth || window.innerWidth;
-  const h = els.canvas.clientHeight || window.innerHeight;
-  els.canvas.width = Math.floor(w * dpr);
-  els.canvas.height = Math.floor(h * dpr);
-  ctx.setTransform(dpr,0,0,dpr,0,0);
-
-  off.width = Math.floor(w / 2);
-  off.height = Math.floor(h / 2);
-}
-window.addEventListener('resize', resize);
-
-/* ========== Rendering pipeline ========== */
-let perlin, rand, biasOverlayCache = [];
-let t = 0;
-
-function rebuildNoise() {
-  const seedStr = els.seed.value.trim() || 'default';
-  const s = hashStringToInt(seedStr);
-  rand = mulberry32(s);
-  perlin = makePerlin2D(s);
-
-  // reset bias cache
-  biasOverlayCache = [];
-}
-
-function renderFrame(dt) {
-  if (!state.running) return;
-
-  const W = off.width, H = off.height;
-  if (W === 0 || H === 0) return;
-
-  const scale = parseFloat(els.scale.value);
-  const oct = parseInt(els.octaves.value, 10);
-  const contrast = parseFloat(els.contrast.value);
-  const speed = parseFloat(els.speed.value);
-  const biasStrength = parseFloat(els.bias.value);
-  const rawMode = state.rawMode;
-
-  t += dt * speed * 0.0005;
-
-    // Draw base fBM noise to offscreen (compute cloudiness + colorize to sky)
-  const img = offCtx.createImageData(W, H);
-  let i = 0;
-  for (let y=0; y<H; y++) {
-    // vertical sky gradient (darker zenith at top, lighter near horizon)
-    const gy = y / (H - 1 || 1);
-    const skyTop = [100, 160, 210];   // rgb at top
-    const skyBot = [170, 220, 250];   // rgb at bottom
-    const skyR = Math.round(lerp(skyTop[0], skyBot[0], gy));
-    const skyG = Math.round(lerp(skyTop[1], skyBot[1], gy));
-    const skyB = Math.round(lerp(skyTop[2], skyBot[2], gy));
-
-    for (let x=0; x<W; x++) {
-      const nx = x/scale + t*0.8;
-      const ny = y/scale + t*0.6;
-
-      // base fBM in [-1,1] -> [0,1]
-      let v = fbm(perlin, nx, ny, oct, 2.0, 0.5);
-      v = (v + 1) * 0.5;
-
-      // emphasize puffy clouds: raise to a power after contrast
-      const m = 0.5;
-      v = clamp((v - m) * contrast + m, 0, 1);
-      const cloud = Math.pow(v, 2.2); // tune softness
-
-      // mix sky -> cloud (white)
-      const r = Math.round(lerp(skyR, 255, cloud));
-      const g = Math.round(lerp(skyG, 255, cloud));
-      const b = Math.round(lerp(skyB, 255, cloud));
-
-      img.data[i++] = r;
-      img.data[i++] = g;
-      img.data[i++] = b;
-      img.data[i++] = 255;
+    // --- ENGINE ---
+    class VisualEngine {
+      constructor(container, state) {
+        this.container = container;
+        this.state = state;
+        this.scene = new THREE.Scene();
+        this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+        this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        this.renderer.setPixelRatio(window.devicePixelRatio);
+        this.renderer.setSize(container.clientWidth, container.clientHeight);
+        container.appendChild(this.renderer.domElement);
+        this.setupShader();
+        this.setupEvents();
+        this.animate();
+      }
+      setupShader() {
+        const vertexShader = `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
+        const fragmentShader = `
+          uniform float uTime; uniform vec2 uResolution; uniform float uSeed; uniform float uNoiseScale; uniform int uNoiseOctaves;
+          uniform float uContrast; uniform float uBiasStrength; uniform bool uRawMode; varying vec2 vUv;
+          float hash(float n) { return fract(sin(n) * 43758.5453123); }
+          vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+          vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+          vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
+          float snoise(vec2 v) {
+            const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
+            vec2 i = floor(v + dot(v, C.yy)); vec2 x0 = v - i + dot(i, C.xx);
+            vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+            vec4 x12 = x0.xyxy + C.xxzz; x12.xy -= i1; i = mod289(i);
+            vec3 p = permute(permute(i.y + vec3(0.0, i1.y, 1.0)) + i.x + vec3(0.0, i1.x, 1.0));
+            vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
+            m = m*m; m = m*m; vec3 x = 2.0 * fract(p * C.www) - 1.0; vec3 h = abs(x) - 0.5;
+            vec3 ox = floor(x + 0.5); vec3 a0 = x - ox; m *= 1.79284291400159 - 0.85373472095314 * (a0*a0 + h*h);
+            vec3 g; g.x = a0.x * x0.x + h.x * x0.y; g.yz = a0.yz * x12.xz + h.yz * x12.yw; return 130.0 * dot(m, g);
+          }
+          float fbm(vec2 p) {
+            float value = 0.0; float amp = 0.5;
+            for (int i = 0; i < 8; i++) { if (i >= uNoiseOctaves) break; value += amp * snoise(p); p *= 2.0; amp *= 0.5; }
+            return value;
+          }
+          float pattern(vec2 p) {
+            vec2 q = vec2(fbm(p + vec2(0.0,0.0)), fbm(p + vec2(5.2,1.3)));
+            vec2 r = vec2(fbm(p + 4.0*q + vec2(1.7,9.2)), fbm(p + 4.0*q + vec2(8.3,2.8)));
+            return fbm(p + 4.0*r);
+          }
+          float getBias(vec2 p) {
+            float b = 0.0;
+            for(int i=0; i<8; i++) {
+              float fi = float(i); vec2 pos = vec2(hash(uSeed + fi * 123.4), hash(uSeed + fi * 567.8));
+              float size = 0.05 + 0.15 * hash(uSeed + fi * 910.1); float rot = hash(uSeed + fi * 111.1) * 6.28;
+              vec2 d = p - pos; float c = cos(rot); float s = sin(rot); d = vec2(d.x*c - d.y*s, d.x*s + d.y*c);
+              float e1 = smoothstep(size*0.2, 0.0, length(d - vec2(-size*0.4, 0.0)));
+              float e2 = smoothstep(size*0.2, 0.0, length(d - vec2(size*0.4, 0.0)));
+              float m = smoothstep(size*0.5, 0.0, length(d - vec2(0.0, -size*0.3))) * smoothstep(0.0, 0.1, d.y + size*0.3);
+              b += (e1 + e2 + m*0.5) * (0.1 + 0.3*hash(uSeed+fi));
+            }
+            return b;
+          }
+          void main() {
+            vec2 p = vUv; vec2 p_noise = p * uNoiseScale + uTime * 0.05;
+            float v = (pattern(p_noise) + 1.0) * 0.5;
+            if (!uRawMode) v = mix(v, clamp(v - getBias(p) * 0.3, 0.0, 1.0), uBiasStrength);
+            v = pow(clamp((v - 0.5) * uContrast + 0.5, 0.0, 1.0), 1.8);
+            gl_FragColor = vec4(mix(mix(vec3(0.1,0.3,0.5), vec3(0.5,0.7,0.9), p.y), vec3(1.0), v), 1.0);
+          }
+        `;
+        this.uniforms = {
+          uTime: { value: 0 }, uResolution: { value: new THREE.Vector2() }, uSeed: { value: this.hashString(this.state.seed) },
+          uNoiseScale: { value: this.state.noiseScale }, uNoiseOctaves: { value: this.state.noiseOctaves },
+          uContrast: { value: this.state.contrast }, uBiasStrength: { value: this.state.biasStrength }, uRawMode: { value: this.state.rawMode }
+        };
+        this.mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({ uniforms: this.uniforms, vertexShader, fragmentShader }));
+        this.scene.add(this.mesh);
+      }
+      hashString(str) { let h = 0; for (let i = 0; i < str.length; i++) h = Math.imul(31, h) + str.charCodeAt(i) | 0; return Math.abs(h % 1e5) / 1e5; }
+      setupEvents() {
+        window.addEventListener('resize', () => { this.renderer.setSize(this.container.clientWidth, this.container.clientHeight); });
+        this.state.subscribe(s => {
+          this.uniforms.uSeed.value = this.hashString(s.seed); this.uniforms.uNoiseScale.value = s.noiseScale;
+          this.uniforms.uNoiseOctaves.value = s.noiseOctaves; this.uniforms.uContrast.value = s.contrast;
+          this.uniforms.uBiasStrength.value = s.biasStrength; this.uniforms.uRawMode.value = s.rawMode;
+        });
+      }
+      animate() { requestAnimationFrame(() => this.animate()); if (this.state.running) this.uniforms.uTime.value += this.state.speed * 0.01; this.renderer.render(this.scene, this.camera); }
+      snapshot() {
+        const link = document.createElement('a'); link.download = `pareidolia-${this.state.seed}.png`;
+        link.href = this.renderer.domElement.toDataURL('image/png'); link.click();
+      }
     }
-  }
-  offCtx.putImageData(img, 0, 0);
 
-  // Apply pareidolia bias (subtle “eyes + mouth” hints)
-  ctx.clearRect(0, 0, els.canvas.width, els.canvas.height);
-  ctx.drawImage(off, 0, 0, off.width, off.height, 0, 0, els.canvas.width, els.canvas.height);
-
-  if (!rawMode && biasStrength > 0) {
-    // Lazy-generate bias overlay once per seed/frame family
-    if (biasOverlayCache.length === 0) {
-      // deterministic sprinkle for current seed
-      const biasRand = mulberry32(hashStringToInt(els.seed.value + ':bias'));
-      // draw onto a temp canvas at screen resolution for crisp edges
-      const tmp = document.createElement('canvas');
-      tmp.width = els.canvas.width;
-      tmp.height = els.canvas.height;
-      const tctx = tmp.getContext('2d');
-      sprinkleBias(tctx, tmp.width, tmp.height, biasStrength, biasRand);
-      biasOverlayCache.push(tmp);
-      // Optional: store positions if you want to visualize outlines
+    // --- UI ---
+    class UI {
+      constructor(state, engine) {
+        this.state = state; this.engine = engine;
+        this.initControls(); this.initAnnotations();
+        this.syncUI(); this.state.subscribe(() => this.syncUI());
+      }
+      initControls() {
+        const bind = (id, key) => {
+          const el = document.getElementById(id);
+          el.oninput = (e) => this.state.update({ [key]: parseFloat(e.target.value) });
+        };
+        bind('scale', 'noiseScale'); bind('octaves', 'noiseOctaves'); bind('contrast', 'contrast'); bind('speed', 'speed'); bind('bias', 'biasStrength');
+        document.getElementById('seed-input').onchange = (e) => this.state.update({ seed: e.target.value });
+        document.getElementById('random-seed').onclick = () => this.state.randomizeSeed();
+        document.getElementById('play-pause').onclick = () => this.state.update({ running: !this.state.running });
+        document.getElementById('raw-toggle').onclick = () => this.state.update({ rawMode: !this.state.rawMode });
+        document.getElementById('snapshot').onclick = () => this.engine.snapshot();
+        document.getElementById('clear-annotations').onclick = () => { if (confirm('Clear all?')) this.state.update({ annotations: [] }); };
+      }
+      initAnnotations() {
+        const svg = document.getElementById('annotation-svg');
+        let isDrawing = false, start = { x: 0, y: 0 }, currRect = null;
+        svg.onmousedown = (e) => {
+          const r = svg.getBoundingClientRect(); start = { x: e.clientX - r.left, y: e.clientY - r.top };
+          isDrawing = true; currRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          currRect.setAttribute('class', 'annotation-rect'); svg.appendChild(currRect);
+        };
+        svg.onmousemove = (e) => {
+          if (!isDrawing) return; const r = svg.getBoundingClientRect();
+          const curr = { x: e.clientX - r.left, y: e.clientY - r.top };
+          currRect.setAttribute('x', Math.min(start.x, curr.x)); currRect.setAttribute('y', Math.min(start.y, curr.y));
+          currRect.setAttribute('width', Math.abs(start.x - curr.x)); currRect.setAttribute('height', Math.abs(start.y - curr.y));
+        };
+        svg.onmouseup = () => {
+          if (!isDrawing) return; isDrawing = false;
+          this.state.update({ annotations: [...this.state.annotations, { id: Date.now(), x: parseFloat(currRect.getAttribute('x')), y: parseFloat(currRect.getAttribute('y')), width: parseFloat(currRect.getAttribute('width')), height: parseFloat(currRect.getAttribute('height')), label: 'Finding...' }] });
+          currRect.remove(); this.renderAnnotations();
+        };
+      }
+      renderAnnotations() {
+        const svg = document.getElementById('annotation-svg'), list = document.getElementById('annotations-list'), section = document.getElementById('annotations-section');
+        svg.innerHTML = ''; list.innerHTML = '';
+        section.style.display = this.state.annotations.length > 0 ? 'flex' : 'none';
+        this.state.annotations.forEach((ann, i) => {
+          const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          r.setAttribute('class', 'annotation-rect'); r.setAttribute('x', ann.x); r.setAttribute('y', ann.y); r.setAttribute('width', ann.width); r.setAttribute('height', ann.height);
+          const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          t.setAttribute('class', 'annotation-label'); t.setAttribute('x', ann.x); t.setAttribute('y', ann.y - 5); t.textContent = ann.label;
+          g.appendChild(r); g.appendChild(t); svg.appendChild(g);
+          const item = document.createElement('div'); item.style.display = 'flex'; item.style.gap = '8px';
+          const inp = document.createElement('input'); inp.type = 'text'; inp.value = ann.label; inp.style.flexGrow = '1';
+          inp.onchange = (e) => { const a = [...this.state.annotations]; a[i].label = e.target.value; this.state.update({ annotations: a }); };
+          const del = document.createElement('button'); del.textContent = '×'; del.className = 'btn'; del.style.color = 'var(--danger)';
+          del.onclick = () => { this.state.update({ annotations: this.state.annotations.filter((_, idx) => idx !== i) }); };
+          item.appendChild(inp); item.appendChild(del); list.appendChild(item);
+        });
+      }
+      syncUI() {
+        document.getElementById('seed-input').value = this.state.seed;
+        document.getElementById('play-pause').textContent = this.state.running ? 'Pause' : 'Play';
+        document.getElementById('raw-toggle').textContent = this.state.rawMode ? 'Raw' : 'Biased';
+        const sync = (id, val) => { document.getElementById(id).value = val; document.getElementById(id+'-val').textContent = val.toFixed(2); };
+        sync('scale', this.state.noiseScale); sync('octaves', this.state.noiseOctaves); sync('contrast', this.state.contrast); sync('speed', this.state.speed); sync('bias', this.state.biasStrength);
+        this.renderAnnotations();
+      }
     }
-    const overlay = biasOverlayCache[0];
-    ctx.drawImage(overlay, 0, 0);
-  }
 
-  // optional bias overlay visualization
-  if (els.showBiasOverlay.checked && !state.rawMode) {
-    ctx.save();
-    ctx.strokeStyle = 'rgba(90,209,255,0.5)';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([6,4]);
-    ctx.strokeRect(6,6, els.canvas.width-12, els.canvas.height-12);
-    ctx.restore();
-  }
-}
-
-/* ========== Annotations ========== */
-function loadAnnotations() {
-  try {
-    const key = 'anno:' + (els.seed.value || 'default');
-    const data = localStorage.getItem(key);
-    state.annotations = data ? JSON.parse(data) : [];
-  } catch { state.annotations = []; }
-  redrawAnnotations();
-}
-
-function saveAnnotations() {
-  try {
-    const key = 'anno:' + (els.seed.value || 'default');
-    localStorage.setItem(key, JSON.stringify(state.annotations));
-  } catch {}
-}
-
-function canvasClientRect() {
-  return els.canvas.getBoundingClientRect();
-}
-
-function redrawAnnotations() {
-  const rect = canvasClientRect();
-  document.querySelectorAll('.annotation').forEach(n => n.remove());
-  state.annotations.forEach(a => {
-    const div = document.createElement('div');
-    div.className = 'annotation';
-    div.style.left = (rect.left + a.x) + 'px';
-    div.style.top = (rect.top + a.y) + 'px';
-    div.style.width = a.w + 'px';
-    div.style.height = a.h + 'px';
-    div.dataset.label = a.label || '';
-    document.body.appendChild(div);
-  });
-}
-
-function startDrag(ev) {
-  const r = canvasClientRect();
-  const x = ev.clientX - r.left;
-  const y = ev.clientY - r.top;
-  state.drag = { x0:x, y0:y, x1:x, y1:y };
-}
-function updateDrag(ev) {
-  if (!state.drag) return;
-  const r = canvasClientRect();
-  state.drag.x1 = ev.clientX - r.left;
-  state.drag.y1 = ev.clientY - r.top;
-  // draw temp rectangle
-  redrawAnnotations();
-  const a = state.drag;
-  const div = document.createElement('div');
-  div.className = 'annotation';
-  const x = Math.min(a.x0, a.x1), y = Math.min(a.y0, a.y1);
-  const w = Math.abs(a.x1 - a.x0), h = Math.abs(a.y1 - a.y0);
-  const rect = canvasClientRect();
-  div.style.left = (rect.left + x) + 'px';
-  div.style.top = (rect.top + y) + 'px';
-  div.style.width = w + 'px';
-  div.style.height = h + 'px';
-  div.dataset.label = '…';
-  document.body.appendChild(div);
-}
-function endDrag(ev) {
-  if (!state.drag) return;
-  const a = state.drag;
-  state.drag = null;
-  const label = prompt('What do you see? (e.g., “owl”, “smiling face”)');
-  if (!label) { redrawAnnotations(); return; }
-  const x = Math.min(a.x0, a.x1), y = Math.min(a.y0, a.y1);
-  const w = Math.abs(a.x1 - a.x0), h = Math.abs(a.y1 - a.y0);
-  state.annotations.push({ x, y, w, h, label });
-  saveAnnotations(); redrawAnnotations();
-}
-
-/* ========== Event wiring ========== */
-function syncLabels() {
-  els.scaleVal.textContent = els.scale.value;
-  els.octavesVal.textContent = els.octaves.value;
-  els.contrastVal.textContent = els.contrast.value;
-  els.speedVal.textContent = els.speed.value;
-}
-
-function initFromURL() {
-  const qsSeed = getQuerySeed();
-  if (qsSeed) els.seed.value = qsSeed;
-  else els.seed.value = randomSeedString();
-}
-
-function applySeed() {
-  setQuerySeed(els.seed.value.trim());
-  rebuildNoise();
-  loadAnnotations();
-  biasOverlayCache = []; // invalidate overlay
-}
-
-els.randomSeed.addEventListener('click', () => {
-  els.seed.value = randomSeedString();
-  applySeed();
-});
-
-[els.scale, els.octaves, els.contrast, els.speed, els.bias].forEach(inp => {
-  inp.addEventListener('input', () => { syncLabels(); biasOverlayCache = []; });
-});
-
-els.seed.addEventListener('change', applySeed);
-
-els.playPause.addEventListener('click', () => {
-  state.running = !state.running;
-  els.playPause.textContent = state.running ? 'Pause' : 'Play';
-});
-
-els.toggleRaw.addEventListener('click', () => {
-  state.rawMode = !state.rawMode;
-  els.toggleRaw.textContent = state.rawMode ? 'Biased' : 'Raw';
-});
-
-els.showBiasOverlay.addEventListener('change', () => { /* visual only */ });
-
-els.snapshot.addEventListener('click', () => {
-  // composite already on main canvas
-  const link = document.createElement('a');
-  link.download = `pareidolia-${(els.seed.value||'seed')}.png`;
-  link.href = els.canvas.toDataURL('image/png');
-  link.click();
-});
-
-els.clearAnn.addEventListener('click', () => {
-  if (confirm('Clear all annotations for this seed?')) {
-    state.annotations = [];
-    saveAnnotations();
-    redrawAnnotations();
-  }
-});
-
-// Canvas interactions (desktop)
-els.canvas.addEventListener('pointerdown', startDrag);
-window.addEventListener('pointermove', updateDrag);
-window.addEventListener('pointerup', endDrag);
-
-// Keyboard shortcuts
-window.addEventListener('keydown', (e) => {
-  if (e.code === 'Space') {
-    e.preventDefault();
-    els.playPause.click();
-  } else if (e.key.toLowerCase() === 'r') {
-    els.toggleRaw.click();
-  } else if (e.key.toLowerCase() === 'b') {
-    els.showBiasOverlay.checked = !els.showBiasOverlay.checked;
-  }
-});
-
-/* ========== Main loop ========== */
-let last = performance.now();
-function loop(now) {
-  const dt = now - last; last = now;
-  renderFrame(dt);
-  requestAnimationFrame(loop);
-}
-
-/* ========== Boot ========== */
-resize();
-initFromURL();
-rebuildNoise();
-syncLabels();
-loadAnnotations();
-requestAnimationFrame(loop);
-window.addEventListener('scroll', redrawAnnotations);
-window.addEventListener('resize', () => { resize(); redrawAnnotations(); });
-
-</script>
+    // --- BOOT ---
+    document.addEventListener('DOMContentLoaded', () => {
+      const engine = new VisualEngine(document.getElementById('canvas-container'), state);
+      new UI(state, engine);
+      state.loadAnnotations();
+    });
+  </script>
 </body>
 </html>
