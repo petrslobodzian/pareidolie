@@ -1,6 +1,7 @@
 /**
  * UI & Annotation System for Pareidolia Lab
  */
+import { generateAbstractSVG } from './geometry.js';
 
 export class UI {
   constructor(state, engine) {
@@ -112,8 +113,12 @@ export class UI {
       if (currentRect) currentRect.remove();
       this.renderAnnotations();
       
-      // Auto-focus the last annotation label in the list if we add one?
-      // For now, just render and let user edit later.
+      // Focus the newly created annotation's input
+      setTimeout(() => {
+        const list = document.getElementById('annotations-list');
+        const lastInput = list.querySelector('div:last-child input');
+        if (lastInput) lastInput.focus();
+      }, 100);
     });
     
     window.addEventListener('resize', () => this.renderAnnotations());
@@ -157,32 +162,70 @@ export class UI {
       
       // Render Sidebar Item
       const item = document.createElement('div');
-      item.style.cssText = 'display: flex; gap: 8px; align-items: center;';
+      item.className = 'discovery-item';
       
+      const thumb = document.createElement('div');
+      thumb.className = 'discovery-thumb';
+      if (ann.svg) {
+        thumb.innerHTML = ann.svg;
+      } else {
+        thumb.innerHTML = '<span style="font-size: 0.6rem; color: var(--text-muted);">?</span>';
+      }
+
       const input = document.createElement('input');
       input.type = 'text';
+      input.className = 'discovery-input';
       input.value = ann.label;
-      input.style.cssText = 'flex-grow: 1; padding: 4px 8px; font-size: 0.8rem;';
+      input.placeholder = "Name discovery...";
+      
       input.addEventListener('change', (e) => {
+        const label = e.target.value;
+        const pixelData = this.engine.getPixelData(ann.x, ann.y, ann.width, ann.height);
+        const svg = generateAbstractSVG(pixelData, label);
+        
         const newAnns = [...this.state.annotations];
-        newAnns[index].label = e.target.value;
+        newAnns[index].label = label;
+        newAnns[index].svg = svg;
         this.state.update({ annotations: newAnns });
+        
+        // Automatic Download
+        this.downloadSVG(svg, label);
       });
       
       const delBtn = document.createElement('button');
-      delBtn.textContent = '×';
-      delBtn.className = 'btn';
-      delBtn.style.cssText = 'padding: 4px 8px; color: var(--danger);';
+      delBtn.innerHTML = '&times;';
+      delBtn.className = 'discovery-delete';
+      delBtn.title = 'Delete discovery';
       delBtn.onclick = () => {
         const newAnns = this.state.annotations.filter((_, i) => i !== index);
         this.state.update({ annotations: newAnns });
       };
       
+      item.appendChild(thumb);
       item.appendChild(input);
       item.appendChild(delBtn);
       list.appendChild(item);
     });
   }
+
+  /**
+   * Automatically triggers a download for the generated SVG
+   */
+  downloadSVG(svg, label) {
+    const blob = new Blob([svg], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const safeLabel = label.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    link.href = url;
+    link.download = `discovery-${safeLabel}.svg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Clean up
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+  }
+
   
   syncUI() {
     document.getElementById('seed-input').value = this.state.seed;

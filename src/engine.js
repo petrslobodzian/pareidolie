@@ -10,7 +10,7 @@ export class VisualEngine {
     
     this.scene = new THREE.Scene();
     this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
     
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(container.clientWidth, container.clientHeight);
@@ -257,5 +257,32 @@ export class VisualEngine {
     link.download = `pareidolia-${this.state.seed}.png`;
     link.href = dataUrl;
     link.click();
+  }
+
+  /**
+   * Extracts pixel data from a specific region
+   */
+  getPixelData(x, y, width, height) {
+    const dpr = window.devicePixelRatio;
+    const canvas = this.renderer.domElement;
+    const gl = this.renderer.getContext();
+    
+    // WebGL coordinates start from bottom-left
+    // x, y are in CSS pixels from top-left
+    const readX = Math.round(x * dpr);
+    const readY = Math.round(canvas.height - (y + height) * dpr);
+    const readW = Math.round(width * dpr);
+    const readH = Math.round(height * dpr);
+    
+    if (readW <= 0 || readH <= 0) return null;
+    
+    const pixels = new Uint8Array(readW * readH * 4);
+    gl.readPixels(readX, readY, readW, readH, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+    
+    return {
+      data: pixels,
+      width: readW,
+      height: readH
+    };
   }
 }
