@@ -30,6 +30,8 @@ export class UI {
     bindRange('contrast', 'contrast');
     bindRange('speed', 'speed');
     bindRange('bias', 'biasStrength');
+    bindRange('coverage', 'cloudCoverage');
+    bindRange('density', 'cloudDensity');
     
     document.getElementById('seed-input').addEventListener('change', (e) => {
       this.state.update({ seed: e.target.value });
@@ -200,6 +202,8 @@ export class UI {
     syncInput('contrast', this.state.contrast);
     syncInput('speed', this.state.speed);
     syncInput('bias', this.state.biasStrength);
+    syncInput('coverage', this.state.cloudCoverage);
+    syncInput('density', this.state.cloudDensity);
     
     this.renderAnnotations();
   }

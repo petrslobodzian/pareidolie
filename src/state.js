@@ -12,6 +12,8 @@ export const state = {
   speed: 0.35,
   showBiasOverlay: false,
   rawMode: false,
+  cloudCoverage: 0.5,
+  cloudDensity: 0.8,
   annotations: [],
   
   // Listeners for state changes
@@ -28,7 +30,7 @@ export const state = {
     
     // Update URL with all persistent parameters
     const url = new URL(window.location);
-    const params = ['seed', 'noiseScale', 'noiseOctaves', 'contrast', 'speed', 'biasStrength', 'rawMode'];
+    const params = ['seed', 'noiseScale', 'noiseOctaves', 'contrast', 'speed', 'biasStrength', 'rawMode', 'cloudCoverage', 'cloudDensity'];
     params.forEach(p => {
       if (this[p] !== undefined) {
         url.searchParams.set(p, this[p]);
@@ -75,7 +77,9 @@ const paramsMap = {
   contrast: 'contrast',
   speed: 'speed',
   biasStrength: 'bias',
-  rawMode: 'raw'
+  rawMode: 'raw',
+  cloudCoverage: 'coverage',
+  cloudDensity: 'density'
 };
 
 Object.entries(paramsMap).forEach(([stateKey, urlKey]) => {

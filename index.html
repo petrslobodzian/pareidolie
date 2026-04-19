@@ -3,179 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pareidolia Lab Elite – Generative Visions</title>
-  <meta name="description" content="Explore the boundaries of perception with high-fidelity generative cloud patterns.">
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;600;700&display=swap');
-
-    :root {
-      --bg: #05070a;
-      --surface: rgba(13, 17, 23, 0.7);
-      --surface-border: rgba(255, 255, 255, 0.1);
-      --text: #f0f6fc;
-      --text-muted: #8b949e;
-      --accent: #58a6ff;
-      --accent-glow: rgba(88, 166, 255, 0.3);
-      --accent-secondary: #bc8cff;
-      --danger: #f85149;
-      --glass: blur(12px) saturate(180%);
-      --radius: 12px;
-      --font-main: 'Inter', system-ui, -apple-system, sans-serif;
-      --font-heading: 'Outfit', sans-serif;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      background-color: var(--bg);
-      color: var(--text);
-      font-family: var(--font-main);
-      overflow: hidden;
-      height: 100dvh;
-      display: flex;
-    }
-
-    aside {
-      width: 340px;
-      height: 100%;
-      background: var(--surface);
-      backdrop-filter: var(--glass);
-      -webkit-backdrop-filter: var(--glass);
-      border-right: 1px solid var(--surface-border);
-      display: flex;
-      flex-direction: column;
-      z-index: 10;
-      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .sidebar-content {
-      padding: 24px;
-      overflow-y: auto;
-      flex-grow: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-    }
-
-    header h1 {
-      font-family: var(--font-heading);
-      font-size: 1.5rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      background: linear-gradient(135deg, #fff 0%, var(--accent) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .badge {
-      font-size: 0.7rem;
-      background: rgba(88, 166, 255, 0.15);
-      color: var(--accent);
-      padding: 2px 8px;
-      border-radius: 99px;
-      border: 1px solid rgba(88, 166, 255, 0.3);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .control-group { display: flex; flex-direction: column; gap: 12px; }
-    .control-group label {
-      font-size: 0.85rem;
-      font-weight: 500;
-      color: var(--text-muted);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .value-display {
-      font-family: monospace;
-      color: var(--accent);
-      background: rgba(88, 166, 255, 0.1);
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 0.8rem;
-    }
-
-    input[type="range"] {
-      -webkit-appearance: none;
-      width: 100%;
-      height: 4px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 2px;
-      outline: none;
-    }
-
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 16px;
-      height: 16px;
-      background: var(--accent);
-      border-radius: 50%;
-      cursor: pointer;
-      box-shadow: 0 0 10px var(--accent-glow);
-    }
-
-    input[type="text"] {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--surface-border);
-      border-radius: var(--radius);
-      padding: 10px 14px;
-      color: var(--text);
-      font-family: inherit;
-      font-size: 0.9rem;
-    }
-
-    .btn {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--surface-border);
-      color: var(--text);
-      padding: 10px 16px;
-      border-radius: var(--radius);
-      cursor: pointer;
-      font-family: inherit;
-      font-weight: 500;
-      font-size: 0.9rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: all 0.2s ease;
-    }
-
-    .btn:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2); }
-    .btn-primary { background: var(--accent); color: #000; border: none; }
-    .btn-icon { width: 40px; height: 40px; padding: 0; border-radius: 50%; }
-
-    main { flex-grow: 1; position: relative; background: #000; }
-    #canvas-container { width: 100%; height: 100%; }
-    canvas { display: block; }
-
-    .overlay-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-    .annotation-svg { width: 100%; height: 100%; pointer-events: all; }
-    .annotation-rect { fill: rgba(88, 166, 255, 0.05); stroke: var(--accent); stroke-width: 2; stroke-dasharray: 4; }
-    .annotation-label { fill: #fff; font-size: 12px; font-weight: 500; }
-
-    .fade-in { animation: fadeIn 0.8s ease-out forwards; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-    @media (max-width: 768px) {
-      body { flex-direction: column; }
-      aside { width: 100%; height: auto; max-height: 40%; border-right: none; border-bottom: 1px solid var(--surface-border); }
-    }
-  </style>
+  <title>Pareidolia Lab Elite – Volumetric Visions</title>
+  <meta name="description" content="Explore the boundaries of perception with high-fidelity volumetric cloud patterns and cognitive bias injection.">
+  <link rel="stylesheet" href="src/style.css">
 </head>
 <body>
   <aside aria-label="Controls">
     <div class="sidebar-content fade-in">
       <header>
         <h1>Pareidolia Lab <span class="badge">Elite</span></h1>
-        <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 4px;">Ambiguous noise + subtle cognitive bias.</p>
+        <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 4px;">Volumetric noise + subtle cognitive bias.</p>
       </header>
 
+      <!-- Seed Selection -->
       <div class="control-group">
         <label for="seed-input">Exploration Seed <span class="value-display" id="seed-val"></span></label>
         <div style="display: flex; gap: 8px;">
@@ -184,37 +24,51 @@
         </div>
       </div>
 
+      <!-- Cloud Shape Controls -->
       <div class="control-group">
-        <label for="scale">Noise Scale <span class="value-display" id="scale-val">2.50</span></label>
-        <input type="range" id="scale" min="0.5" max="10.0" step="0.01" value="2.50">
+        <label for="scale">Noise Scale <span class="value-display" id="scale-val">4.00</span></label>
+        <input type="range" id="scale" min="0.5" max="10.0" step="0.01" value="4.00">
       </div>
 
       <div class="control-group">
-        <label for="octaves">Complexity (Octaves) <span class="value-display" id="octaves-val">5</span></label>
-        <input type="range" id="octaves" min="1" max="8" step="1" value="5">
+        <label for="octaves">Complexity (Octaves) <span class="value-display" id="octaves-val">4</span></label>
+        <input type="range" id="octaves" min="1" max="8" step="1" value="4">
       </div>
 
       <div class="control-group">
-        <label for="contrast">Cloud Contrast <span class="value-display" id="contrast-val">1.60</span></label>
-        <input type="range" id="contrast" min="0.5" max="3.0" step="0.01" value="1.60">
+        <label for="coverage">Cloud Coverage <span class="value-display" id="coverage-val">0.50</span></label>
+        <input type="range" id="coverage" min="0.0" max="1.0" step="0.01" value="0.50">
       </div>
 
       <div class="control-group">
-        <label for="speed">Drift Speed <span class="value-display" id="speed-val">0.25</span></label>
-        <input type="range" id="speed" min="0" max="2.0" step="0.01" value="0.25">
+        <label for="density">Cloud Density <span class="value-display" id="density-val">0.80</span></label>
+        <input type="range" id="density" min="0.0" max="2.0" step="0.01" value="0.80">
       </div>
 
+      <div class="control-group">
+        <label for="contrast">Render Contrast <span class="value-display" id="contrast-val">1.20</span></label>
+        <input type="range" id="contrast" min="0.5" max="3.0" step="0.01" value="1.20">
+      </div>
+
+      <div class="control-group">
+        <label for="speed">Drift Speed <span class="value-display" id="speed-val">0.35</span></label>
+        <input type="range" id="speed" min="0" max="2.0" step="0.01" value="0.35">
+      </div>
+
+      <!-- Bias Injection -->
       <div class="control-group" style="background: rgba(88, 166, 255, 0.05); padding: 16px; border-radius: 12px; border: 1px solid rgba(88, 166, 255, 0.1);">
-        <label for="bias">Pareidolia Bias <span class="value-display" id="bias-val">0.30</span></label>
-        <input type="range" id="bias" min="0" max="1.0" step="0.01" value="0.30">
-        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 8px;">Subtly injects facial patterns into the noise flow.</p>
+        <label for="bias">Pareidolia Bias <span class="value-display" id="bias-val">0.20</span></label>
+        <input type="range" id="bias" min="0" max="1.0" step="0.01" value="0.20">
+        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 8px;">Subtly injects facial patterns into the cloud flow.</p>
       </div>
 
+      <!-- Discovery List -->
       <div class="control-group" id="annotations-section" style="display: none;">
         <label>Discoveries</label>
         <div id="annotations-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
       </div>
 
+      <!-- Action Buttons -->
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px;">
         <button class="btn btn-primary" id="play-pause">Pause</button>
         <button class="btn" id="raw-toggle">Raw Mode</button>
@@ -231,224 +85,7 @@
     </div>
   </main>
 
-  <!-- External Library -->
-  <script src="https://unpkg.com/three@0.150.1/build/three.min.js"></script>
-
-  <script>
-    // --- STATE ---
-    const state = {
-      seed: 'mystic-cloud-123',
-      running: true,
-      biasStrength: 0.3,
-      noiseScale: 2.5,
-      noiseOctaves: 5,
-      contrast: 1.6,
-      speed: 0.25,
-      showBiasOverlay: false,
-      rawMode: false,
-      annotations: [],
-      listeners: new Set(),
-      update(payload) {
-        Object.assign(this, payload);
-        this.notify();
-        if (payload.annotations) this.saveAnnotations();
-        const url = new URL(window.location);
-        const params = ['seed', 'noiseScale', 'noiseOctaves', 'contrast', 'speed', 'biasStrength', 'rawMode'];
-        params.forEach(p => { if (this[p] !== undefined) url.searchParams.set(p, this[p]); });
-        window.history.replaceState({}, '', url);
-      },
-      subscribe(cb) { this.listeners.add(cb); return () => this.listeners.delete(cb); },
-      notify() { this.listeners.forEach(cb => cb(this)); },
-      saveAnnotations() { localStorage.setItem(`pareidolia_ann_${this.seed}`, JSON.stringify(this.annotations)); },
-      loadAnnotations() {
-        const saved = localStorage.getItem(`pareidolia_ann_${this.seed}`);
-        this.annotations = saved ? JSON.parse(saved) : [];
-        this.notify();
-      },
-      randomizeSeed() {
-        const adj = ['silent', 'lucky', 'odd', 'fuzzy', 'noisy', 'gentle', 'mystic', 'sleepy', 'weird', 'blur'];
-        const nouns = ['owl', 'cloud', 'rock', 'toast', 'tree', 'wave', 'smoke', 'stain', 'sky', 'dust'];
-        this.update({ seed: `${adj[Math.floor(Math.random()*10)]}-${nouns[Math.floor(Math.random()*10)]}-${Math.floor(Math.random()*1e4)}` });
-      }
-    };
-
-    // --- INITIALIZE STATE FROM URL ---
-    const urlParams = new URLSearchParams(window.location.search);
-    const paramsMap = { seed:'seed', scale:'noiseScale', octaves:'noiseOctaves', contrast:'contrast', speed:'speed', bias:'biasStrength', raw:'rawMode' };
-    Object.entries(paramsMap).forEach(([urlKey, stateKey]) => {
-      const val = urlParams.get(urlKey);
-      if (val !== null) {
-        if (stateKey === 'seed') state[stateKey] = val;
-        else if (stateKey === 'rawMode') state[stateKey] = val === 'true';
-        else state[stateKey] = parseFloat(val);
-      }
-    });
-
-    // --- ENGINE ---
-    class VisualEngine {
-      constructor(container, state) {
-        this.container = container;
-        this.state = state;
-        this.scene = new THREE.Scene();
-        this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-        this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        this.renderer.setPixelRatio(window.devicePixelRatio);
-        this.renderer.setSize(container.clientWidth, container.clientHeight);
-        container.appendChild(this.renderer.domElement);
-        this.setupShader();
-        this.setupEvents();
-        this.animate();
-      }
-      setupShader() {
-        const vertexShader = `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
-        const fragmentShader = `
-          uniform float uTime; uniform vec2 uResolution; uniform float uSeed; uniform float uNoiseScale; uniform int uNoiseOctaves;
-          uniform float uContrast; uniform float uBiasStrength; uniform bool uRawMode; varying vec2 vUv;
-          float hash(float n) { return fract(sin(n) * 43758.5453123); }
-          vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-          vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-          vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
-          float snoise(vec2 v) {
-            const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
-            vec2 i = floor(v + dot(v, C.yy)); vec2 x0 = v - i + dot(i, C.xx);
-            vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
-            vec4 x12 = x0.xyxy + C.xxzz; x12.xy -= i1; i = mod289(i);
-            vec3 p = permute(permute(i.y + vec3(0.0, i1.y, 1.0)) + i.x + vec3(0.0, i1.x, 1.0));
-            vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
-            m = m*m; m = m*m; vec3 x = 2.0 * fract(p * C.www) - 1.0; vec3 h = abs(x) - 0.5;
-            vec3 ox = floor(x + 0.5); vec3 a0 = x - ox; m *= 1.79284291400159 - 0.85373472095314 * (a0*a0 + h*h);
-            vec3 g; g.x = a0.x * x0.x + h.x * x0.y; g.yz = a0.yz * x12.xz + h.yz * x12.yw; return 130.0 * dot(m, g);
-          }
-          float fbm(vec2 p) {
-            float value = 0.0; float amp = 0.5;
-            for (int i = 0; i < 8; i++) { if (i >= uNoiseOctaves) break; value += amp * snoise(p); p *= 2.0; amp *= 0.5; }
-            return value;
-          }
-          float pattern(vec2 p) {
-            vec2 q = vec2(fbm(p + vec2(0.0,0.0)), fbm(p + vec2(5.2,1.3)));
-            vec2 r = vec2(fbm(p + 4.0*q + vec2(1.7,9.2)), fbm(p + 4.0*q + vec2(8.3,2.8)));
-            return fbm(p + 4.0*r);
-          }
-          float getBias(vec2 p) {
-            float b = 0.0;
-            for(int i=0; i<8; i++) {
-              float fi = float(i); vec2 pos = vec2(hash(uSeed + fi * 123.4), hash(uSeed + fi * 567.8));
-              float size = 0.05 + 0.15 * hash(uSeed + fi * 910.1); float rot = hash(uSeed + fi * 111.1) * 6.28;
-              vec2 d = p - pos; float c = cos(rot); float s = sin(rot); d = vec2(d.x*c - d.y*s, d.x*s + d.y*c);
-              float e1 = smoothstep(size*0.2, 0.0, length(d - vec2(-size*0.4, 0.0)));
-              float e2 = smoothstep(size*0.2, 0.0, length(d - vec2(size*0.4, 0.0)));
-              float m = smoothstep(size*0.5, 0.0, length(d - vec2(0.0, -size*0.3))) * smoothstep(0.0, 0.1, d.y + size*0.3);
-              b += (e1 + e2 + m*0.5) * (0.1 + 0.3*hash(uSeed+fi));
-            }
-            return b;
-          }
-          void main() {
-            vec2 p = vUv; vec2 p_noise = p * uNoiseScale + uTime * 0.05;
-            float v = (pattern(p_noise) + 1.0) * 0.5;
-            if (!uRawMode) v = mix(v, clamp(v - getBias(p) * 0.3, 0.0, 1.0), uBiasStrength);
-            v = pow(clamp((v - 0.5) * uContrast + 0.5, 0.0, 1.0), 1.8);
-            gl_FragColor = vec4(mix(mix(vec3(0.1,0.3,0.5), vec3(0.5,0.7,0.9), p.y), vec3(1.0), v), 1.0);
-          }
-        `;
-        this.uniforms = {
-          uTime: { value: 0 }, uResolution: { value: new THREE.Vector2() }, uSeed: { value: this.hashString(this.state.seed) },
-          uNoiseScale: { value: this.state.noiseScale }, uNoiseOctaves: { value: this.state.noiseOctaves },
-          uContrast: { value: this.state.contrast }, uBiasStrength: { value: this.state.biasStrength }, uRawMode: { value: this.state.rawMode }
-        };
-        this.mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({ uniforms: this.uniforms, vertexShader, fragmentShader }));
-        this.scene.add(this.mesh);
-      }
-      hashString(str) { let h = 0; for (let i = 0; i < str.length; i++) h = Math.imul(31, h) + str.charCodeAt(i) | 0; return Math.abs(h % 1e5) / 1e5; }
-      setupEvents() {
-        window.addEventListener('resize', () => { this.renderer.setSize(this.container.clientWidth, this.container.clientHeight); });
-        this.state.subscribe(s => {
-          this.uniforms.uSeed.value = this.hashString(s.seed); this.uniforms.uNoiseScale.value = s.noiseScale;
-          this.uniforms.uNoiseOctaves.value = s.noiseOctaves; this.uniforms.uContrast.value = s.contrast;
-          this.uniforms.uBiasStrength.value = s.biasStrength; this.uniforms.uRawMode.value = s.rawMode;
-        });
-      }
-      animate() { requestAnimationFrame(() => this.animate()); if (this.state.running) this.uniforms.uTime.value += this.state.speed * 0.01; this.renderer.render(this.scene, this.camera); }
-      snapshot() {
-        const link = document.createElement('a'); link.download = `pareidolia-${this.state.seed}.png`;
-        link.href = this.renderer.domElement.toDataURL('image/png'); link.click();
-      }
-    }
-
-    // --- UI ---
-    class UI {
-      constructor(state, engine) {
-        this.state = state; this.engine = engine;
-        this.initControls(); this.initAnnotations();
-        this.syncUI(); this.state.subscribe(() => this.syncUI());
-      }
-      initControls() {
-        const bind = (id, key) => {
-          const el = document.getElementById(id);
-          el.oninput = (e) => this.state.update({ [key]: parseFloat(e.target.value) });
-        };
-        bind('scale', 'noiseScale'); bind('octaves', 'noiseOctaves'); bind('contrast', 'contrast'); bind('speed', 'speed'); bind('bias', 'biasStrength');
-        document.getElementById('seed-input').onchange = (e) => this.state.update({ seed: e.target.value });
-        document.getElementById('random-seed').onclick = () => this.state.randomizeSeed();
-        document.getElementById('play-pause').onclick = () => this.state.update({ running: !this.state.running });
-        document.getElementById('raw-toggle').onclick = () => this.state.update({ rawMode: !this.state.rawMode });
-        document.getElementById('snapshot').onclick = () => this.engine.snapshot();
-        document.getElementById('clear-annotations').onclick = () => { if (confirm('Clear all?')) this.state.update({ annotations: [] }); };
-      }
-      initAnnotations() {
-        const svg = document.getElementById('annotation-svg');
-        let isDrawing = false, start = { x: 0, y: 0 }, currRect = null;
-        svg.onmousedown = (e) => {
-          const r = svg.getBoundingClientRect(); start = { x: e.clientX - r.left, y: e.clientY - r.top };
-          isDrawing = true; currRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-          currRect.setAttribute('class', 'annotation-rect'); svg.appendChild(currRect);
-        };
-        svg.onmousemove = (e) => {
-          if (!isDrawing) return; const r = svg.getBoundingClientRect();
-          const curr = { x: e.clientX - r.left, y: e.clientY - r.top };
-          currRect.setAttribute('x', Math.min(start.x, curr.x)); currRect.setAttribute('y', Math.min(start.y, curr.y));
-          currRect.setAttribute('width', Math.abs(start.x - curr.x)); currRect.setAttribute('height', Math.abs(start.y - curr.y));
-        };
-        svg.onmouseup = () => {
-          if (!isDrawing) return; isDrawing = false;
-          this.state.update({ annotations: [...this.state.annotations, { id: Date.now(), x: parseFloat(currRect.getAttribute('x')), y: parseFloat(currRect.getAttribute('y')), width: parseFloat(currRect.getAttribute('width')), height: parseFloat(currRect.getAttribute('height')), label: 'Finding...' }] });
-          currRect.remove(); this.renderAnnotations();
-        };
-      }
-      renderAnnotations() {
-        const svg = document.getElementById('annotation-svg'), list = document.getElementById('annotations-list'), section = document.getElementById('annotations-section');
-        svg.innerHTML = ''; list.innerHTML = '';
-        section.style.display = this.state.annotations.length > 0 ? 'flex' : 'none';
-        this.state.annotations.forEach((ann, i) => {
-          const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-          const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-          r.setAttribute('class', 'annotation-rect'); r.setAttribute('x', ann.x); r.setAttribute('y', ann.y); r.setAttribute('width', ann.width); r.setAttribute('height', ann.height);
-          const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-          t.setAttribute('class', 'annotation-label'); t.setAttribute('x', ann.x); t.setAttribute('y', ann.y - 5); t.textContent = ann.label;
-          g.appendChild(r); g.appendChild(t); svg.appendChild(g);
-          const item = document.createElement('div'); item.style.display = 'flex'; item.style.gap = '8px';
-          const inp = document.createElement('input'); inp.type = 'text'; inp.value = ann.label; inp.style.flexGrow = '1';
-          inp.onchange = (e) => { const a = [...this.state.annotations]; a[i].label = e.target.value; this.state.update({ annotations: a }); };
-          const del = document.createElement('button'); del.textContent = '×'; del.className = 'btn'; del.style.color = 'var(--danger)';
-          del.onclick = () => { this.state.update({ annotations: this.state.annotations.filter((_, idx) => idx !== i) }); };
-          item.appendChild(inp); item.appendChild(del); list.appendChild(item);
-        });
-      }
-      syncUI() {
-        document.getElementById('seed-input').value = this.state.seed;
-        document.getElementById('play-pause').textContent = this.state.running ? 'Pause' : 'Play';
-        document.getElementById('raw-toggle').textContent = this.state.rawMode ? 'Raw' : 'Biased';
-        const sync = (id, val) => { document.getElementById(id).value = val; document.getElementById(id+'-val').textContent = val.toFixed(2); };
-        sync('scale', this.state.noiseScale); sync('octaves', this.state.noiseOctaves); sync('contrast', this.state.contrast); sync('speed', this.state.speed); sync('bias', this.state.biasStrength);
-        this.renderAnnotations();
-      }
-    }
-
-    // --- BOOT ---
-    document.addEventListener('DOMContentLoaded', () => {
-      const engine = new VisualEngine(document.getElementById('canvas-container'), state);
-      new UI(state, engine);
-      state.loadAnnotations();
-    });
-  </script>
+  <!-- Modular App Entry -->
+  <script type="module" src="src/main.js"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-import * as THREE from 'https://cdn.skypack.dev/three@0.150.1';
+import * as THREE from 'https://unpkg.com/three@0.150.1/build/three.module.js';
 
 /**
  * Visual Engine: Three.js + GLSL Shaders
@@ -38,85 +38,107 @@ export class VisualEngine {
       uniform int uNoiseOctaves;
       uniform float uContrast;
       uniform float uBiasStrength;
+      uniform float uCloudCoverage;
+      uniform float uCloudDensity;
       uniform bool uRawMode;
       varying vec2 vUv;
 
-      // Deterministic hash based on seed
-      float hash(float n) { return fract(sin(n) * 43758.5453123); }
-      float hash2(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }
+      // --- Noise Lib (from Shadertoy 4tdSWr) ---
+      #define UI0 1597334673U
+      #define UI1 3812015801U
+      #define UI2 uvec2(UI0, UI1)
+      #define UI3 uvec3(UI0, UI1, 2798796415U)
+      #define UIF (1.0 / float(0xffffffffU))
 
-      // 2D Simplex Noise
-      vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-      vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-      vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
-
-      float snoise(vec2 v) {
-        const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
-        vec2 i  = floor(v + dot(v, C.yy) );
-        vec2 x0 = v -   i + dot(i, C.xx);
-        vec2 i1;
-        i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
-        vec4 x12 = x0.xyxy + C.xxzz;
-        x12.xy -= i1;
-        i = mod289(i);
-        vec3 p = permute( permute( i.y + vec3(0.0, i1.y, 1.0 )) + i.x + vec3(0.0, i1.x, 1.0 ));
-        vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
-        m = m*m ;
-        m = m*m ;
-        vec3 x = 2.0 * fract(p * C.www) - 1.0;
-        vec3 h = abs(x) - 0.5;
-        vec3 ox = floor(x + 0.5);
-        vec3 a0 = x - ox;
-        m *= 1.79284291400159 - 0.85373472095314 * ( a0*a0 + h*h );
-        vec3 g;
-        g.x  = a0.x  * x0.x  + h.x  * x0.y;
-        g.yz = a0.yz * x12.xz + h.yz * x12.yw;
-        return 130.0 * dot(m, g);
+      vec3 hash33(vec3 p) {
+        uvec3 q = uvec3(ivec3(p)) * UI3;
+        q = (q.x ^ q.y ^ q.z)*UI3;
+        return -1. + 2. * vec3(q) * UIF;
       }
 
-      float fbm(vec2 p) {
-        float value = 0.0;
-        float amplitude = 0.5;
-        float frequency = 0.0;
-        for (int i = 0; i < 8; i++) {
-          if (i >= uNoiseOctaves) break;
-          value += amplitude * snoise(p);
-          p *= 2.0;
-          amplitude *= 0.5;
+      float remap(float x, float a, float b, float c, float d) {
+        return (((x - a) / (max(b - a, 0.0001))) * (d - c)) + c;
+      }
+
+      float gradientNoise(vec3 x, float freq) {
+        vec3 p = floor(x);
+        vec3 w = fract(x);
+        vec3 u = w * w * w * (w * (w * 6. - 15.) + 10.);
+        vec3 ga = hash33(p + vec3(0., 0., 0.));
+        vec3 gb = hash33(p + vec3(1., 0., 0.));
+        vec3 gc = hash33(p + vec3(0., 1., 0.));
+        vec3 gd = hash33(p + vec3(1., 1., 0.));
+        vec3 ge = hash33(p + vec3(0., 0., 1.));
+        vec3 gf = hash33(p + vec3(1., 0., 1.));
+        vec3 gg = hash33(p + vec3(0., 1., 1.));
+        vec3 gh = hash33(p + vec3(1., 1., 1.));
+        float va = dot(ga, w - vec3(0., 0., 0.));
+        float vb = dot(gb, w - vec3(1., 0., 0.));
+        float vc = dot(gc, w - vec3(0., 1., 0.));
+        float vd = dot(gd, w - vec3(1., 1., 0.));
+        float ve = dot(ge, w - vec3(0., 0., 1.));
+        float vf = dot(gf, w - vec3(1., 0., 1.));
+        float vg = dot(gg, w - vec3(0., 1., 1.));
+        float vh = dot(gh, w - vec3(1., 1., 1.));
+        return va + u.x * (vb - va) + u.y * (vc - va) + u.z * (ve - va) + 
+               u.x * u.y * (va - vb - vc + vd) + u.y * u.z * (va - vc - ve + vg) + 
+               u.z * u.x * (va - vb - ve + vf) + u.x * u.y * u.z * (-va + vb + vc - vd + ve - vf - vg + vh);
+      }
+
+      float worleyNoise(vec3 uv, float freq) {    
+        vec3 id = floor(uv);
+        vec3 p = fract(uv);
+        float minDist = 10.0;
+        for (float x = -1.; x <= 1.; ++x) {
+          for(float y = -1.; y <= 1.; ++y) {
+            for(float z = -1.; z <= 1.; ++z) {
+              vec3 offset = vec3(x, y, z);
+              vec3 h = hash33(id + offset) * .5 + .5;
+              h += offset;
+              vec3 d = p - h;
+              minDist = min(minDist, dot(d, d));
+            }
+          }
         }
-        return value;
+        return 1. - minDist;
       }
 
-      // Domain Warping
-      float pattern(vec2 p) {
-        vec2 q = vec2( fbm( p + vec2(0.0,0.0) ), fbm( p + vec2(5.2,1.3) ) );
-        vec2 r = vec2( fbm( p + 4.0*q + vec2(1.7,9.2) ), fbm( p + 4.0*q + vec2(8.3,2.8) ) );
-        return fbm( p + 4.0*r );
+      float perlinfbm(vec3 p, float freq, int octaves) {
+        float G = exp2(-.85);
+        float amp = 1.;
+        float noise = 0.;
+        for (int i = 0; i < 8; ++i) {
+          if (i >= octaves) break;
+          noise += amp * gradientNoise(p * freq, freq);
+          freq *= 2.;
+          amp *= G;
+        }
+        return noise;
       }
 
-      // Bias Injection: Subtle face hints
+      float worleyFbm(vec3 p, float freq) {
+        return worleyNoise(p*freq, freq) * .625 +
+               worleyNoise(p*freq*2., freq*2.) * .25 +
+               worleyNoise(p*freq*4., freq*4.) * .125;
+      }
+
+      // --- Bias Injection (Pareidolia Logic) ---
+      float hash(float n) { return fract(sin(n) * 43758.5453123); }
       float getBias(vec2 p) {
         float b = 0.0;
-        // Deterministic sprinkle based on uSeed
         for(int i=0; i<8; i++) {
           float fi = float(i);
           vec2 pos = vec2(hash(uSeed + fi * 123.4), hash(uSeed + fi * 567.8));
           float size = 0.05 + 0.15 * hash(uSeed + fi * 910.1);
           float rot = hash(uSeed + fi * 111.1) * 6.28;
-          
           vec2 d = p - pos;
           float cosR = cos(rot); float sinR = sin(rot);
           d = vec2(d.x * cosR - d.y * sinR, d.x * sinR + d.y * cosR);
-          
-          // Eyes
           float eyeDist = size * 0.4;
           float eyeSize = size * 0.2;
           float e1 = smoothstep(eyeSize, 0.0, length(d - vec2(-eyeDist, 0.0)));
           float e2 = smoothstep(eyeSize, 0.0, length(d - vec2(eyeDist, 0.0)));
-          
-          // Mouth
-          float m = smoothstep(size * 0.5, 0.0, length(d - vec4(0.0, -size*0.3, 0.0, 0.0).xy)) * smoothstep(0.0, 0.1, d.y + size*0.3);
-          
+          float m = smoothstep(size * 0.5, 0.0, length(d - vec2(0.0, -size*0.3))) * smoothstep(0.0, 0.1, d.y + size*0.3);
           b += (e1 + e2 + m * 0.5) * (0.1 + 0.3 * hash(uSeed + fi));
         }
         return b;
@@ -124,27 +146,48 @@ export class VisualEngine {
 
       void main() {
         vec2 p = vUv;
-        vec2 p_noise = p * uNoiseScale + uTime * 0.05;
+        vec2 uv = p * uNoiseScale;
         
-        float v = pattern(p_noise);
-        v = (v + 1.0) * 0.5; // [0, 1]
+        // Time-based drift + Seed Offset
+        float drift = uTime * 0.05;
+        vec3 seedOffset = vec3(uSeed * 100.0, uSeed * 200.0, uSeed * 300.0);
+        vec3 p3 = vec3(p * uNoiseScale - drift, drift * 0.2) + seedOffset;
         
-        // Apply Bias
+        // 1. Generate Perlin-Worley Base
+        float pfbm = mix(1., perlinfbm(p3, 4., uNoiseOctaves), .5);
+        pfbm = abs(pfbm * 2. - 1.); // billowy
+        
+        float wfbm_low = worleyFbm(p3, 4.);
+        float perlinWorley = clamp(remap(pfbm, 0., 1., wfbm_low, 1.0), 0.0, 1.0);
+        
+        // 2. Generate Detail Worley
+        float wfbm_high = worleyFbm(p3 * 2.0, 8.0);
+        
+        // 3. Combine into Cloud Shape
+        float cloud = clamp(remap(perlinWorley, wfbm_high - 1.0, 1.0, 0.0, 1.0), 0.0, 1.0);
+        
+        // 4. Coverage & Density Remapping
+        float coverage = uCloudCoverage; // 0.0 to 1.0
+        cloud = clamp(remap(cloud, 1.0 - coverage, 1.0, 0.0, 1.0), 0.0, 1.0);
+        cloud *= uCloudDensity;
+
+        // 5. Inject Pareidolia Bias
         if (!uRawMode) {
           float b = getBias(p);
-          v = mix(v, clamp(v - b * 0.3, 0.0, 1.0), uBiasStrength);
+          // Darken the noise where faces are, but within cloud bounds
+          cloud = clamp(cloud - b * uBiasStrength * 0.5, 0.0, 1.0);
         }
 
-        // Contrast & Puffy Clouds
-        v = clamp((v - 0.5) * uContrast + 0.5, 0.0, 1.0);
-        v = pow(v, 1.8);
+        // 6. Contrast & Final Shaping
+        float v = pow(clamp((cloud - 0.5) * uContrast + 0.5, 0.0, 1.0), 1.5);
 
-        // Color Palette
-        vec3 skyTop = vec3(0.1, 0.3, 0.5);
-        vec3 skyBot = vec3(0.5, 0.7, 0.9);
+        // 7. Elite Color Palette
+        vec3 skyTop = vec3(0.1, 0.25, 0.45);
+        vec3 skyBot = vec3(0.3, 0.55, 0.85);
         vec3 sky = mix(skyTop, skyBot, p.y);
         
-        vec3 color = mix(sky, vec3(1.0), v);
+        vec3 cloudColor = vec3(0.95, 0.98, 1.0);
+        vec3 color = mix(sky, cloudColor, v);
 
         gl_FragColor = vec4(color, 1.0);
       }
@@ -159,6 +202,8 @@ export class VisualEngine {
       uNoiseOctaves: { value: this.state.noiseOctaves },
       uContrast: { value: this.state.contrast },
       uBiasStrength: { value: this.state.biasStrength },
+      uCloudCoverage: { value: this.state.cloudCoverage },
+      uCloudDensity: { value: this.state.cloudDensity },
       uRawMode: { value: this.state.rawMode }
     };
     
@@ -192,6 +237,8 @@ export class VisualEngine {
       this.uniforms.uNoiseOctaves.value = s.noiseOctaves;
       this.uniforms.uContrast.value = s.contrast;
       this.uniforms.uBiasStrength.value = s.biasStrength;
+      this.uniforms.uCloudCoverage.value = s.cloudCoverage;
+      this.uniforms.uCloudDensity.value = s.cloudDensity;
       this.uniforms.uRawMode.value = s.rawMode;
     });
   }
