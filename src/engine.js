@@ -285,4 +285,28 @@ export class VisualEngine {
       height: readH
     };
   }
+
+  /**
+   * Extracts a data URL for a specific region
+   */
+  getRegionDataURL(x, y, width, height) {
+    const dpr = window.devicePixelRatio;
+    const canvas = this.renderer.domElement;
+    
+    // Create a temporary canvas to hold the region
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = width * dpr;
+    tempCanvas.height = height * dpr;
+    const tempCtx = tempCanvas.getContext('2d');
+    
+    // Draw the main canvas into the temp canvas, offsetting to the region
+    // Note: WebGL canvas needs preserveDrawingBuffer: true, which is already set
+    tempCtx.drawImage(
+      canvas,
+      x * dpr, y * dpr, width * dpr, height * dpr,
+      0, 0, width * dpr, height * dpr
+    );
+    
+    return tempCanvas.toDataURL('image/png');
+  }
 }
