@@ -29,6 +29,20 @@ export class UI {
     document.getElementById('snapshot').addEventListener('click', () => {
       this.engine.snapshot();
     });
+
+    // Wind Controls
+    document.getElementById('wind-up').addEventListener('click', () => {
+      this.state.update({ windY: 0.1, windX: 0.0 });
+    });
+    document.getElementById('wind-down').addEventListener('click', () => {
+      this.state.update({ windY: -0.1, windX: 0.0 });
+    });
+    document.getElementById('wind-left').addEventListener('click', () => {
+      this.state.update({ windX: 0.1, windY: 0.0 });
+    });
+    document.getElementById('wind-right').addEventListener('click', () => {
+      this.state.update({ windX: -0.1, windY: 0.0 });
+    });
   }
   
   initAnnotations() {

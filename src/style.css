@@ -119,12 +119,49 @@ canvas {
   justify-content: center;
   box-shadow: 0 15px 50px rgba(0, 0, 0, 0.2);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 10;
 }
 
 .play-btn:hover {
   transform: scale(1.05);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
 }
+
+.wind-controls {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wind-btn {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.wind-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+#wind-up { top: 0; left: 50%; transform: translateX(-50%); }
+#wind-down { bottom: 0; left: 50%; transform: translateX(-50%); }
+#wind-left { left: 0; top: 50%; transform: translateY(-50%); }
+#wind-right { right: 0; top: 50%; transform: translateY(-50%); }
 
 /* Modal Styling */
 .modal-overlay {

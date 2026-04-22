@@ -14,6 +14,8 @@ export const state = {
   rawMode: false,
   cloudCoverage: 0.15,
   cloudDensity: 1.4,
+  windX: 0.05,
+  windY: 0.05,
   annotations: [],
   
   // Listeners for state changes
@@ -30,7 +32,7 @@ export const state = {
     
     // Update URL with all persistent parameters
     const url = new URL(window.location);
-    const params = ['seed', 'noiseScale', 'noiseOctaves', 'contrast', 'speed', 'biasStrength', 'rawMode', 'cloudCoverage', 'cloudDensity'];
+    const params = ['seed', 'noiseScale', 'noiseOctaves', 'contrast', 'speed', 'biasStrength', 'rawMode', 'cloudCoverage', 'cloudDensity', 'windX', 'windY'];
     params.forEach(p => {
       if (this[p] !== undefined) {
         url.searchParams.set(p, this[p]);
