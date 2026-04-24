@@ -8,77 +8,83 @@ export class UI {
     this.state = state;
     this.engine = engine;
     this.pendingDiscovery = null;
-    
+
     this.initControls();
     this.initAnnotations();
     this.initModal();
     this.syncUI();
-    
+
     this.state.subscribe(() => this.syncUI());
   }
-  
+
   initControls() {
     document.getElementById('random-seed').addEventListener('click', () => {
       this.state.randomizeSeed();
     });
-    
+
     document.getElementById('play-pause').addEventListener('click', () => {
       this.state.update({ running: !this.state.running });
     });
-    
+
     document.getElementById('snapshot').addEventListener('click', () => {
       this.engine.snapshot();
     });
+
+    document.getElementById('clear-annotations').addEventListener('click', () => {
+      if (confirm('Clear all annotations for this seed?')) {
+        this.state.update({ annotations: [] });
+      }
+    });
   }
-  
+
   initAnnotations() {
     const svg = document.getElementById('annotation-svg');
     let isDrawing = false;
     let startPoint = { x: 0, y: 0 };
     let currentRect = null;
-    
+
     svg.addEventListener('mousedown', (e) => {
       const rect = svg.getBoundingClientRect();
       startPoint = { x: e.clientX - rect.left, y: e.clientY - rect.top };
       isDrawing = true;
-      
+
       currentRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
       currentRect.setAttribute('class', 'annotation-rect');
       svg.appendChild(currentRect);
     });
-    
+
     svg.addEventListener('mousemove', (e) => {
       if (!isDrawing) return;
       const rect = svg.getBoundingClientRect();
       const currentPoint = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-      
+
       const x = Math.min(startPoint.x, currentPoint.x);
       const y = Math.min(startPoint.y, currentPoint.y);
       const width = Math.abs(startPoint.x - currentPoint.x);
       const height = Math.abs(startPoint.y - currentPoint.y);
-      
+
       currentRect.setAttribute('x', x);
       currentRect.setAttribute('y', y);
       currentRect.setAttribute('width', width);
       currentRect.setAttribute('height', height);
     });
-    
+
     svg.addEventListener('mouseup', (e) => {
       if (!isDrawing) return;
       isDrawing = false;
-      
+
       const rect = {
-          x: parseFloat(currentRect.getAttribute('x')),
-          y: parseFloat(currentRect.getAttribute('y')),
-          width: parseFloat(currentRect.getAttribute('width')),
-          height: parseFloat(currentRect.getAttribute('height'))
+        x: parseFloat(currentRect.getAttribute('x')),
+        y: parseFloat(currentRect.getAttribute('y')),
+        width: parseFloat(currentRect.getAttribute('width')),
+        height: parseFloat(currentRect.getAttribute('height'))
       };
-      
+
       if (currentRect) currentRect.remove();
-      
+
       // Minimal selection check
       if (rect.width < 10 || rect.height < 10) return;
-      
+
       this.openDiscoveryModal(rect);
     });
   }
@@ -120,15 +126,15 @@ export class UI {
     const originalDataURL = this.engine.getRegionDataURL(rect.x, rect.y, rect.width, rect.height);
     const pixelData = this.engine.getPixelData(rect.x, rect.y, rect.width, rect.height);
 
-    this.pendingDiscovery = { 
-      rect, 
-      pixelData, 
+    this.pendingDiscovery = {
+      rect,
+      pixelData,
       originalDataURL,
-      rotation: 0 
+      rotation: 0
     };
 
     this.updateModalViews();
-    
+
     // Reset Input
     nameInput.value = '';
     modal.style.display = 'flex';
@@ -153,7 +159,7 @@ export class UI {
     if (!this.pendingDiscovery) return;
     const { rect, pixelData, rotation } = this.pendingDiscovery;
     const svg = generateDiscoverySVG(pixelData, label, rect.width, rect.height, rotation);
-    
+
     // Download logic
     this.downloadSVG(svg, label);
     this.pendingDiscovery = null;
@@ -175,7 +181,7 @@ export class UI {
   syncUI() {
     const playIcon = document.getElementById('play-icon');
     const pauseIcon = document.getElementById('pause-icon');
-    
+
     if (this.state.running) {
       playIcon.style.display = 'none';
       pauseIcon.style.display = 'block';
