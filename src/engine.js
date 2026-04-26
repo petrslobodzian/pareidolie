@@ -3,7 +3,7 @@ import * as THREE from 'https://unpkg.com/three@0.150.1/build/three.module.js';
 /**
  * Visual Engine: Three.js + GLSL Shaders
  * Cinematic Layered Engine (Perspective + High Clarity)
- * Version: "50mm Prime Lens" Edition
+ * Version: "Vertical Mass" Edition
  */
 export class VisualEngine {
   constructor(container, state) {
@@ -179,21 +179,19 @@ export class VisualEngine {
 
       void main() {
         vec2 uv = vUv;
-        
-        // --- 50mm FOCAL LENGTH (Normal Lens Perspective) ---
         float horizonLine = 0.20;
         float dist = uv.y - horizonLine;
         
         float finalV = 0.0;
         if (dist > 0.0) {
-          // 50mm has an FOV of ~40deg. 
-          // Perspective mapping is more linear (mix 0.2 to 1.0 instead of 0.05)
           float normDist = dist / (1.0 - horizonLine);
           float perspective = mix(0.25, 1.0, normDist); 
-          
-          // Linear depth mapping for 50mm feel
           vec2 p = vec2((uv.x - 0.5) / perspective + 0.5, 1.0 / (0.15 + dist * 1.5));
           
+          // --- HALF WIDTH SQUEEZE ---
+          // Multiply X by 2.0 to make the patterns half as wide
+          p.x *= 2.0;
+
           vec3 seedOffset = vec3(uSeed * 100.0, uSeed * 200.0, uSeed * 300.0);
 
           for(int i=0; i<6; i++) {

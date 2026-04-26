@@ -6,30 +6,30 @@ export const state = {
   seed: 'mystic-cloud-123',
   running: true,
   biasStrength: 0.2,
-  noiseScale: 0.3,
+  noiseScale: 0.15,
   noiseOctaves: 8,
-  contrast: 2.0,
-  speed: 0.05,
+  contrast: 2.5,
+  speed: 0.03,
   showBiasOverlay: false,
   rawMode: false,
-  cloudCoverage: 0.12,
+  cloudCoverage: 0.15,
   cloudDensity: 0.8,
   windX: 0.05,
   windY: 0.05,
   annotations: [],
-  
+
   // Listeners for state changes
   listeners: new Set(),
-  
+
   update(payload) {
     Object.assign(this, payload);
     this.notify();
-    
+
     // Auto-save annotations if they changed
     if (payload.annotations) {
       this.saveAnnotations();
     }
-    
+
     // Update URL with all persistent parameters
     const url = new URL(window.location);
     const params = ['seed', 'noiseScale', 'noiseOctaves', 'contrast', 'speed', 'biasStrength', 'rawMode', 'cloudCoverage', 'cloudDensity', 'windX', 'windY'];
@@ -40,26 +40,26 @@ export const state = {
     });
     window.history.replaceState({}, '', url);
   },
-  
+
   subscribe(callback) {
     this.listeners.add(callback);
     return () => this.listeners.delete(callback);
   },
-  
+
   notify() {
     this.listeners.forEach(cb => cb(this));
   },
-  
+
   saveAnnotations() {
     localStorage.setItem(`pareidolia_ann_${this.seed}`, JSON.stringify(this.annotations));
   },
-  
+
   loadAnnotations() {
     const saved = localStorage.getItem(`pareidolia_ann_${this.seed}`);
     this.annotations = saved ? JSON.parse(saved) : [];
     this.notify();
   },
-  
+
   randomizeSeed() {
     const adjectives = ['silent', 'lucky', 'odd', 'fuzzy', 'noisy', 'gentle', 'mystic', 'sleepy', 'weird', 'blur'];
     const nouns = ['owl', 'cloud', 'rock', 'toast', 'tree', 'wave', 'smoke', 'stain', 'sky', 'dust'];

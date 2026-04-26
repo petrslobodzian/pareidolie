@@ -51,7 +51,7 @@ function getMarchingSquaresPath(grid, gridSize, threshold, svgW, svgH) {
  * Generates a clean, professional discovery SVG (Black outline on white background)
  * Supports 90-degree increments of rotation.
  */
-export function generateDiscoverySVG(pixelData, label, sourceW, sourceH, rotation = 0) {
+export function generateDiscoverySVG(pixelData, label, sourceW, sourceH, rotation = 0, threshold = 0.5) {
   if (!pixelData) return '';
   
   const { data, width, height } = pixelData;
@@ -105,12 +105,11 @@ export function generateDiscoverySVG(pixelData, label, sourceW, sourceH, rotatio
   const svgH = isPortrait ? 100 : 100 * aspectRatio;
 
   // Generate single clean black path
-  const threshold = 0.5; // Optimal threshold for edge detection
   const pathData = getMarchingSquaresPath(grid, gridSize, threshold, svgW, svgH);
   
   return `
     <svg viewBox="0 0 ${svgW} ${svgH}" xmlns="http://www.w3.org/2000/svg" style="background-color: white;">
-      <path d="${pathData}" fill="none" stroke="black" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="${pathData}" fill="none" stroke="black" stroke-width="0.4" stroke-linecap="round" stroke-linejoin="round" />
     </svg>
   `;
 }
