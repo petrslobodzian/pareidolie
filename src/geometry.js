@@ -109,8 +109,8 @@ export function generateDiscoverySVG(pixelData, label, sourceW, sourceH, rotatio
   const pathData = getMarchingSquaresPath(grid, gridSize, threshold, svgW, svgH);
   
   return `
-    <svg viewBox="0 0 ${svgW} ${svgH}" xmlns="http://www.w3.org/2000/svg" style="background: white;">
-      <path d="${pathData}" fill="none" stroke="black" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round" />
+    <svg viewBox="0 0 ${svgW} ${svgH}" xmlns="http://www.w3.org/2000/svg" style="background-color: white;">
+      <path d="${pathData}" fill="none" stroke="black" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />
     </svg>
   `;
 }

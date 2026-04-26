@@ -30,19 +30,33 @@
         </svg>
       </button>
 
-      <button class="play-btn" id="play-pause">
-        <div id="play-icon" style="display: none;">
-          <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
-            <polygon points="5 3 19 12 5 21 5 3"></polygon>
-          </svg>
-        </div>
-        <div id="pause-icon">
-          <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
-            <rect x="6" y="4" width="4" height="16"></rect>
-            <rect x="14" y="4" width="4" height="16"></rect>
-          </svg>
-        </div>
-      </button>
+      <div class="wind-controls">
+        <button class="wind-btn" id="wind-up" title="Wind Up">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 4l-8 8h16l-8-8z"/></svg>
+        </button>
+        <button class="wind-btn" id="wind-down" title="Wind Down">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 20l8-8h-16l8 8z"/></svg>
+        </button>
+        <button class="wind-btn" id="wind-left" title="Wind Left">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M4 12l8 8v-16l-8 8z"/></svg>
+        </button>
+        <button class="wind-btn" id="wind-right" title="Wind Right">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M20 12l-8-8v16l8-8z"/></svg>
+        </button>
+        <button class="play-btn" id="play-pause">
+          <div id="play-icon" style="display: none;">
+            <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+          </div>
+          <div id="pause-icon">
+            <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+              <rect x="6" y="4" width="4" height="16"></rect>
+              <rect x="14" y="4" width="4" height="16"></rect>
+            </svg>
+          </div>
+        </button>
+      </div>
 
       <button class="icon-btn" id="snapshot" title="Save Snapshot">
         <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"

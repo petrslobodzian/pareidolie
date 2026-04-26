@@ -41,6 +41,7 @@ export class VisualEngine {
       uniform float uCloudCoverage;
       uniform float uCloudDensity;
       uniform bool uRawMode;
+      uniform vec2 uOffset;
       varying vec2 vUv;
 
       // --- Noise Lib (from Shadertoy 4tdSWr) ---
@@ -148,10 +149,9 @@ export class VisualEngine {
         vec2 p = vUv;
         vec2 uv = p * uNoiseScale;
         
-        // Time-based drift + Seed Offset
-        float drift = uTime * 0.05;
+        // Time-based drift driven by Wind Controls
         vec3 seedOffset = vec3(uSeed * 100.0, uSeed * 200.0, uSeed * 300.0);
-        vec3 p3 = vec3(p * uNoiseScale - drift, drift * 0.2) + seedOffset;
+        vec3 p3 = vec3(p * uNoiseScale - uOffset, uTime * 0.01) + seedOffset;
         
         // 1. Generate Perlin-Worley Base
         float pfbm = mix(1., perlinfbm(p3, 4., uNoiseOctaves), .5);
@@ -204,7 +204,8 @@ export class VisualEngine {
       uBiasStrength: { value: this.state.biasStrength },
       uCloudCoverage: { value: this.state.cloudCoverage },
       uCloudDensity: { value: this.state.cloudDensity },
-      uRawMode: { value: this.state.rawMode }
+      uRawMode: { value: this.state.rawMode },
+      uOffset: { value: new THREE.Vector2(0, 0) }
     };
 
     this.material = new THREE.ShaderMaterial({
@@ -246,7 +247,9 @@ export class VisualEngine {
   animate(time) {
     requestAnimationFrame(this.animate.bind(this));
     if (this.state.running) {
-      this.uniforms.uTime.value += this.state.speed * 0.01;
+      this.uniforms.uTime.value += 0.01;
+      this.uniforms.uOffset.value.x += this.state.windX * this.state.speed * 0.1;
+      this.uniforms.uOffset.value.y += this.state.windY * this.state.speed * 0.1;
     }
     this.renderer.render(this.scene, this.camera);
   }
