@@ -2,6 +2,8 @@ import * as THREE from 'https://unpkg.com/three@0.150.1/build/three.module.js';
 
 /**
  * Visual Engine: Three.js + GLSL Shaders
+ * Cinematic Layered Engine (Perspective + High Clarity)
+ * Version: "50mm Prime Lens" Edition
  */
 export class VisualEngine {
   constructor(container, state) {
@@ -16,21 +18,40 @@ export class VisualEngine {
     this.renderer.setSize(container.clientWidth, container.clientHeight);
     container.appendChild(this.renderer.domElement);
 
+    this.initUniforms();
     this.setupShader();
     this.setupEvents();
     this.animate();
   }
 
-  setupShader() {
-    const vertexShader = `
+  initUniforms() {
+    this.uniforms = {
+      uTime: { value: 0 },
+      uResolution: { value: new THREE.Vector2(this.container.clientWidth, this.container.clientHeight) },
+      uSeed: { value: this.hashString(this.state.seed) },
+      uNoiseScale: { value: this.state.noiseScale },
+      uNoiseOctaves: { value: parseInt(this.state.noiseOctaves) || 4 },
+      uContrast: { value: this.state.contrast },
+      uBiasStrength: { value: this.state.biasStrength },
+      uCloudCoverage: { value: this.state.cloudCoverage },
+      uCloudDensity: { value: this.state.cloudDensity },
+      uRawMode: { value: this.state.rawMode },
+      uOffset: { value: new THREE.Vector2(0, 0) }
+    };
+  }
+
+  getVertexShader() {
+    return `
       varying vec2 vUv;
       void main() {
         vUv = uv;
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
       }
     `;
+  }
 
-    const fragmentShader = `
+  getFragmentShader() {
+    return `
       uniform float uTime;
       uniform vec2 uResolution;
       uniform float uSeed;
@@ -44,7 +65,6 @@ export class VisualEngine {
       uniform vec2 uOffset;
       varying vec2 vUv;
 
-      // --- Noise Lib (from Shadertoy 4tdSWr) ---
       #define UI0 1597334673U
       #define UI1 3812015801U
       #define UI2 uvec2(UI0, UI1)
@@ -61,7 +81,7 @@ export class VisualEngine {
         return (((x - a) / (max(b - a, 0.0001))) * (d - c)) + c;
       }
 
-      float gradientNoise(vec3 x, float freq) {
+      float gradientNoise(vec3 x) {
         vec3 p = floor(x);
         vec3 w = fract(x);
         vec3 u = w * w * w * (w * (w * 6. - 15.) + 10.);
@@ -86,7 +106,7 @@ export class VisualEngine {
                u.z * u.x * (va - vb - ve + vf) + u.x * u.y * u.z * (-va + vb + vc - vd + ve - vf - vg + vh);
       }
 
-      float worleyNoise(vec3 uv, float freq) {    
+      float worleyNoise(vec3 uv) {    
         vec3 id = floor(uv);
         vec3 p = fract(uv);
         float minDist = 10.0;
@@ -110,7 +130,7 @@ export class VisualEngine {
         float noise = 0.;
         for (int i = 0; i < 8; ++i) {
           if (i >= octaves) break;
-          noise += amp * gradientNoise(p * freq, freq);
+          noise += amp * gradientNoise(p * freq);
           freq *= 2.;
           amp *= G;
         }
@@ -118,20 +138,21 @@ export class VisualEngine {
       }
 
       float worleyFbm(vec3 p, float freq) {
-        return worleyNoise(p*freq, freq) * .625 +
-               worleyNoise(p*freq*2., freq*2.) * .25 +
-               worleyNoise(p*freq*4., freq*4.) * .125;
+        return worleyNoise(p*freq) * .625 +
+               worleyNoise(p*freq*2.) * .25 +
+               worleyNoise(p*freq*4.) * .125;
       }
 
-      // --- Bias Injection (Pareidolia Logic) ---
-      float hash(float n) { return fract(sin(n) * 43758.5453123); }
-      float getBias(vec2 p) {
+      float getBias(vec2 p, float seed) {
         float b = 0.0;
         for(int i=0; i<8; i++) {
           float fi = float(i);
-          vec2 pos = vec2(hash(uSeed + fi * 123.4), hash(uSeed + fi * 567.8));
-          float size = 0.05 + 0.15 * hash(uSeed + fi * 910.1);
-          float rot = hash(uSeed + fi * 111.1) * 6.28;
+          float h1 = fract(sin(seed + fi * 123.4) * 43758.545);
+          float h2 = fract(sin(seed + fi * 567.8) * 43758.545);
+          float h3 = fract(sin(seed + fi * 910.1) * 43758.545);
+          vec2 pos = vec2(h1, h2);
+          float size = 0.05 + 0.15 * h3;
+          float rot = fract(sin(seed + fi * 111.1) * 43758.545) * 6.28;
           vec2 d = p - pos;
           float cosR = cos(rot); float sinR = sin(rot);
           d = vec2(d.x * cosR - d.y * sinR, d.x * sinR + d.y * cosR);
@@ -140,80 +161,83 @@ export class VisualEngine {
           float e1 = smoothstep(eyeSize, 0.0, length(d - vec2(-eyeDist, 0.0)));
           float e2 = smoothstep(eyeSize, 0.0, length(d - vec2(eyeDist, 0.0)));
           float m = smoothstep(size * 0.5, 0.0, length(d - vec2(0.0, -size*0.3))) * smoothstep(0.0, 0.1, d.y + size*0.3);
-          b += (e1 + e2 + m * 0.5) * (0.1 + 0.3 * hash(uSeed + fi));
+          b += (e1 + e2 + m * 0.5) * (0.1 + 0.3 * fract(sin(seed + fi) * 43758.545));
         }
         return b;
       }
 
-      void main() {
-        vec2 p = vUv;
-        vec2 uv = p * uNoiseScale;
-        
-        // Time-based drift driven by Wind Controls
-        vec3 seedOffset = vec3(uSeed * 100.0, uSeed * 200.0, uSeed * 300.0);
-        vec3 p3 = vec3(p * uNoiseScale - uOffset, uTime * 0.01) + seedOffset;
-        
-        // 1. Generate Perlin-Worley Base
+      float getCloudDensity(vec3 p3) {
         float pfbm = mix(1., perlinfbm(p3, 4., uNoiseOctaves), .5);
-        pfbm = abs(pfbm * 2. - 1.); // billowy
-        
+        pfbm = abs(pfbm * 2. - 1.);
         float wfbm_low = worleyFbm(p3, 4.);
         float perlinWorley = clamp(remap(pfbm, 0., 1., wfbm_low, 1.0), 0.0, 1.0);
-        
-        // 2. Generate Detail Worley
         float wfbm_high = worleyFbm(p3 * 2.0, 8.0);
-        
-        // 3. Combine into Cloud Shape
         float cloud = clamp(remap(perlinWorley, wfbm_high - 1.0, 1.0, 0.0, 1.0), 0.0, 1.0);
-        
-        // 4. Coverage & Density Remapping
-        float coverage = uCloudCoverage; // 0.0 to 1.0
-        cloud = clamp(remap(cloud, 1.0 - coverage, 1.0, 0.0, 1.0), 0.0, 1.0);
-        cloud *= uCloudDensity;
+        cloud = clamp(remap(cloud, 1.0 - uCloudCoverage, 1.0, 0.0, 1.0), 0.0, 1.0);
+        return cloud * uCloudDensity;
+      }
 
-        // 5. Inject Pareidolia Bias
-        if (!uRawMode) {
-          float b = getBias(p);
-          // Darken the noise where faces are, but within cloud bounds
-          cloud = clamp(cloud - b * uBiasStrength * 0.5, 0.0, 1.0);
+      void main() {
+        vec2 uv = vUv;
+        
+        // --- 50mm FOCAL LENGTH (Normal Lens Perspective) ---
+        float horizonLine = 0.20;
+        float dist = uv.y - horizonLine;
+        
+        float finalV = 0.0;
+        if (dist > 0.0) {
+          // 50mm has an FOV of ~40deg. 
+          // Perspective mapping is more linear (mix 0.2 to 1.0 instead of 0.05)
+          float normDist = dist / (1.0 - horizonLine);
+          float perspective = mix(0.25, 1.0, normDist); 
+          
+          // Linear depth mapping for 50mm feel
+          vec2 p = vec2((uv.x - 0.5) / perspective + 0.5, 1.0 / (0.15 + dist * 1.5));
+          
+          vec3 seedOffset = vec3(uSeed * 100.0, uSeed * 200.0, uSeed * 300.0);
+
+          for(int i=0; i<6; i++) {
+            float heightOffset = float(i) * 0.04;
+            vec2 pTilted = p - vec2(0.0, heightOffset * (p.y - 1.0));
+            vec3 p3 = vec3(pTilted * uNoiseScale * 1.5 - uOffset, uTime * 0.01 + heightOffset) + seedOffset;
+            
+            float cloud = getCloudDensity(p3);
+            
+            if (!uRawMode) {
+              float b = getBias(uv, uSeed);
+              cloud = clamp(cloud - b * uBiasStrength * 0.5, 0.0, 1.0);
+            }
+
+            float layerV = pow(clamp((cloud - 0.5) * uContrast + 0.5, 0.0, 1.0), 1.5);
+            finalV = max(finalV, layerV);
+          }
+          
+          finalV *= smoothstep(0.0, 0.1, dist);
         }
 
-        // 6. Contrast & Final Shaping
-        float v = pow(clamp((cloud - 0.5) * uContrast + 0.5, 0.0, 1.0), 1.5);
-
-        // 7. Elite Color Palette
-        vec3 skyTop = vec3(0.1, 0.25, 0.45);
-        vec3 skyBot = vec3(0.3, 0.55, 0.85);
-        vec3 sky = mix(skyTop, skyBot, p.y);
+        vec3 skyTop = vec3(0.02, 0.05, 0.15);
+        vec3 skyBot = vec3(0.3, 0.5, 0.8);
+        vec3 sky = mix(skyBot, skyTop, uv.y);
         
         vec3 cloudColor = vec3(0.95, 0.98, 1.0);
-        vec3 color = mix(sky, cloudColor, v);
+        vec3 color = mix(sky, cloudColor, finalV);
 
         gl_FragColor = vec4(color, 1.0);
       }
     `;
+  }
 
+  setupShader() {
     this.geometry = new THREE.PlaneGeometry(2, 2);
-    this.uniforms = {
-      uTime: { value: 0 },
-      uResolution: { value: new THREE.Vector2() },
-      uSeed: { value: this.hashString(this.state.seed) },
-      uNoiseScale: { value: this.state.noiseScale },
-      uNoiseOctaves: { value: this.state.noiseOctaves },
-      uContrast: { value: this.state.contrast },
-      uBiasStrength: { value: this.state.biasStrength },
-      uCloudCoverage: { value: this.state.cloudCoverage },
-      uCloudDensity: { value: this.state.cloudDensity },
-      uRawMode: { value: this.state.rawMode },
-      uOffset: { value: new THREE.Vector2(0, 0) }
-    };
-
     this.material = new THREE.ShaderMaterial({
       uniforms: this.uniforms,
-      vertexShader,
-      fragmentShader
+      vertexShader: this.getVertexShader(),
+      fragmentShader: this.getFragmentShader()
     });
 
+    if (this.mesh) {
+      this.scene.remove(this.mesh);
+    }
     this.mesh = new THREE.Mesh(this.geometry, this.material);
     this.scene.add(this.mesh);
   }
@@ -235,7 +259,7 @@ export class VisualEngine {
     this.state.subscribe((s) => {
       this.uniforms.uSeed.value = this.hashString(s.seed);
       this.uniforms.uNoiseScale.value = s.noiseScale;
-      this.uniforms.uNoiseOctaves.value = s.noiseOctaves;
+      this.uniforms.uNoiseOctaves.value = parseInt(s.noiseOctaves) || 4;
       this.uniforms.uContrast.value = s.contrast;
       this.uniforms.uBiasStrength.value = s.biasStrength;
       this.uniforms.uCloudCoverage.value = s.cloudCoverage;
@@ -262,54 +286,28 @@ export class VisualEngine {
     link.click();
   }
 
-  /**
-   * Extracts pixel data from a specific region
-   */
   getPixelData(x, y, width, height) {
     const dpr = window.devicePixelRatio;
     const canvas = this.renderer.domElement;
     const gl = this.renderer.getContext();
-
-    // WebGL coordinates start from bottom-left
-    // x, y are in CSS pixels from top-left
     const readX = Math.round(x * dpr);
     const readY = Math.round(canvas.height - (y + height) * dpr);
     const readW = Math.round(width * dpr);
     const readH = Math.round(height * dpr);
-
     if (readW <= 0 || readH <= 0) return null;
-
     const pixels = new Uint8Array(readW * readH * 4);
     gl.readPixels(readX, readY, readW, readH, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-
-    return {
-      data: pixels,
-      width: readW,
-      height: readH
-    };
+    return { data: pixels, width: readW, height: readH };
   }
 
-  /**
-   * Extracts a data URL for a specific region
-   */
   getRegionDataURL(x, y, width, height) {
     const dpr = window.devicePixelRatio;
     const canvas = this.renderer.domElement;
-
-    // Create a temporary canvas to hold the region
     const tempCanvas = document.createElement('canvas');
     tempCanvas.width = width * dpr;
     tempCanvas.height = height * dpr;
     const tempCtx = tempCanvas.getContext('2d');
-
-    // Draw the main canvas into the temp canvas, offsetting to the region
-    // Note: WebGL canvas needs preserveDrawingBuffer: true, which is already set
-    tempCtx.drawImage(
-      canvas,
-      x * dpr, y * dpr, width * dpr, height * dpr,
-      0, 0, width * dpr, height * dpr
-    );
-
+    tempCtx.drawImage(canvas, x * dpr, y * dpr, width * dpr, height * dpr, 0, 0, width * dpr, height * dpr);
     return tempCanvas.toDataURL('image/png');
   }
 }
