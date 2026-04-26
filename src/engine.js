@@ -36,6 +36,7 @@ export class VisualEngine {
       uCloudCoverage: { value: this.state.cloudCoverage },
       uCloudDensity: { value: this.state.cloudDensity },
       uRawMode: { value: this.state.rawMode },
+      uNightMode: { value: this.state.nightMode },
       uOffset: { value: new THREE.Vector2(0, 0) }
     };
   }
@@ -62,6 +63,7 @@ export class VisualEngine {
       uniform float uCloudCoverage;
       uniform float uCloudDensity;
       uniform bool uRawMode;
+      uniform bool uNightMode;
       uniform vec2 uOffset;
       varying vec2 vUv;
 
@@ -206,18 +208,19 @@ export class VisualEngine {
               cloud = clamp(cloud - b * uBiasStrength * 0.5, 0.0, 1.0);
             }
 
-            float layerV = pow(clamp((cloud - 0.5) * uContrast + 0.5, 0.0, 1.0), 1.5);
+            float power = uNightMode ? 0.8 : 1.5;
+            float layerV = pow(clamp((cloud - 0.5) * uContrast + 0.5, 0.0, 1.0), power);
             finalV = max(finalV, layerV);
           }
           
           finalV *= smoothstep(0.0, 0.1, dist);
         }
 
-        vec3 skyTop = vec3(0.02, 0.05, 0.15);
-        vec3 skyBot = vec3(0.3, 0.5, 0.8);
+        vec3 skyTop = uNightMode ? vec3(0.0) : vec3(0.02, 0.05, 0.15);
+        vec3 skyBot = uNightMode ? vec3(0.0) : vec3(0.3, 0.5, 0.8);
         vec3 sky = mix(skyBot, skyTop, uv.y);
         
-        vec3 cloudColor = vec3(0.95, 0.98, 1.0);
+        vec3 cloudColor = uNightMode ? vec3(0.98, 0.98, 1.0) : vec3(0.95, 0.98, 1.0);
         vec3 color = mix(sky, cloudColor, finalV);
 
         gl_FragColor = vec4(color, 1.0);
@@ -263,6 +266,7 @@ export class VisualEngine {
       this.uniforms.uCloudCoverage.value = s.cloudCoverage;
       this.uniforms.uCloudDensity.value = s.cloudDensity;
       this.uniforms.uRawMode.value = s.rawMode;
+      this.uniforms.uNightMode.value = s.nightMode;
     });
   }
 

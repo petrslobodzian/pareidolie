@@ -8,26 +8,30 @@ export class UI {
     this.state = state;
     this.engine = engine;
     this.pendingDiscovery = null;
-    
+
     this.initControls();
     this.initAnnotations();
     this.initModal();
     this.syncUI();
-    
+
     this.state.subscribe(() => this.syncUI());
   }
-  
+
   initControls() {
     document.getElementById('random-seed').addEventListener('click', () => {
       this.state.randomizeSeed();
     });
-    
+
     document.getElementById('play-pause').addEventListener('click', () => {
       this.state.update({ running: !this.state.running });
     });
-    
+
     document.getElementById('snapshot').addEventListener('click', () => {
       this.engine.snapshot();
+    });
+
+    document.getElementById('night-mode-toggle').addEventListener('click', () => {
+      this.state.update({ nightMode: !this.state.nightMode });
     });
 
     document.getElementById('help-btn').addEventListener('click', () => {
@@ -48,55 +52,55 @@ export class UI {
       this.state.update({ windX: -0.1, windY: 0.0 });
     });
   }
-  
+
   initAnnotations() {
     const svg = document.getElementById('annotation-svg');
     let isDrawing = false;
     let startPoint = { x: 0, y: 0 };
     let currentRect = null;
-    
+
     svg.addEventListener('mousedown', (e) => {
       const rect = svg.getBoundingClientRect();
       startPoint = { x: e.clientX - rect.left, y: e.clientY - rect.top };
       isDrawing = true;
-      
+
       currentRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
       currentRect.setAttribute('class', 'annotation-rect');
       svg.appendChild(currentRect);
     });
-    
+
     svg.addEventListener('mousemove', (e) => {
       if (!isDrawing) return;
       const rect = svg.getBoundingClientRect();
       const currentPoint = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-      
+
       const x = Math.min(startPoint.x, currentPoint.x);
       const y = Math.min(startPoint.y, currentPoint.y);
       const width = Math.abs(startPoint.x - currentPoint.x);
       const height = Math.abs(startPoint.y - currentPoint.y);
-      
+
       currentRect.setAttribute('x', x);
       currentRect.setAttribute('y', y);
       currentRect.setAttribute('width', width);
       currentRect.setAttribute('height', height);
     });
-    
+
     svg.addEventListener('mouseup', (e) => {
       if (!isDrawing) return;
       isDrawing = false;
-      
+
       const rect = {
-          x: parseFloat(currentRect.getAttribute('x')),
-          y: parseFloat(currentRect.getAttribute('y')),
-          width: parseFloat(currentRect.getAttribute('width')),
-          height: parseFloat(currentRect.getAttribute('height'))
+        x: parseFloat(currentRect.getAttribute('x')),
+        y: parseFloat(currentRect.getAttribute('y')),
+        width: parseFloat(currentRect.getAttribute('width')),
+        height: parseFloat(currentRect.getAttribute('height'))
       };
-      
+
       if (currentRect) currentRect.remove();
-      
+
       // Minimal selection check
       if (rect.width < 10 || rect.height < 10) return;
-      
+
       this.openDiscoveryModal(rect);
     });
   }
@@ -157,16 +161,16 @@ export class UI {
     const originalDataURL = this.engine.getRegionDataURL(rect.x, rect.y, rect.width, rect.height);
     const pixelData = this.engine.getPixelData(rect.x, rect.y, rect.width, rect.height);
 
-    this.pendingDiscovery = { 
-      rect, 
-      pixelData, 
+    this.pendingDiscovery = {
+      rect,
+      pixelData,
       originalDataURL,
       rotation: 0,
       threshold: 0.5
     };
 
     this.updateModalViews();
-    
+
     // Reset Input
     nameInput.value = isTutorial ? 'Your Discovery' : '';
     modal.style.display = 'flex';
@@ -178,12 +182,12 @@ export class UI {
     // Auto-close and Countdown if tutorial
     if (isTutorial) {
       let count = 3;
-      header.innerText = `Demo Discover will automatically close in ${count}...`;
-      
+      header.innerText = `Demo will close in ${count}...`;
+
       const countdown = setInterval(() => {
         count--;
         if (count > 0) {
-          header.innerText = `Demo Discover will automatically close in ${count}...`;
+          header.innerText = `Demo will close in ${count}...`;
         } else {
           clearInterval(countdown);
         }
@@ -195,7 +199,7 @@ export class UI {
           this.pendingDiscovery = null;
         }
         clearInterval(countdown);
-      }, 3000); 
+      }, 3000);
     }
   }
 
@@ -217,13 +221,13 @@ export class UI {
   saveDiscovery(label) {
     if (!this.pendingDiscovery) return;
     const { rect, pixelData, rotation, threshold, originalDataURL } = this.pendingDiscovery;
-    
+
     // Generate the final contour SVG for the composite
     const contourSVG = generateDiscoverySVG(pixelData, label, rect.width, rect.height, rotation, threshold);
-    
+
     // Generate the A4 Report
     this.downloadDiscoveryReport(originalDataURL, contourSVG, label, rotation);
-    
+
     this.pendingDiscovery = null;
   }
 
@@ -259,11 +263,11 @@ export class UI {
     const centerY = margin + boxH / 2;
     ctx.translate(centerX, centerY);
     ctx.rotate((rotation * Math.PI) / 180);
-    
+
     const scaleO = Math.min(boxW / imgOriginal.width, boxH / imgOriginal.height);
     const dwo = imgOriginal.width * scaleO;
     const dho = imgOriginal.height * scaleO;
-    ctx.drawImage(imgOriginal, -dwo/2, -dho/2, dwo, dho);
+    ctx.drawImage(imgOriginal, -dwo / 2, -dho / 2, dwo, dho);
     ctx.restore();
 
     // 5. Draw Contour (Right)
@@ -271,7 +275,7 @@ export class UI {
     const scaleC = Math.min(boxW / imgContour.width, boxH / imgContour.height);
     const dwc = imgContour.width * scaleC;
     const dhc = imgContour.height * scaleC;
-    ctx.drawImage(imgContour, contourX + (boxW - dwc)/2, margin + (boxH - dhc)/2, dwc, dhc);
+    ctx.drawImage(imgContour, contourX + (boxW - dwc) / 2, margin + (boxH - dhc) / 2, dwc, dhc);
 
     // 6. Draw Label (Bottom Center)
     ctx.fillStyle = '#03486B';
@@ -314,19 +318,19 @@ export class UI {
     const group = document.getElementById('tutorial-group');
     const cursor = document.getElementById('ghost-cursor');
     const rect = document.getElementById('ghost-rect');
-    
+
     group.style.opacity = '1';
-    
+
     // 1. Center the demo in the viewport
     const endW = 240;
     const endH = 240;
     const svg = document.getElementById('annotation-svg');
     const svgW = svg.clientWidth;
     const svgH = svg.clientHeight;
-    
+
     const startX = (svgW - endW) / 2;
     const startY = (svgH - endH) / 2;
-    
+
     cursor.setAttribute('cx', startX);
     cursor.setAttribute('cy', startY);
     rect.setAttribute('x', startX);
@@ -338,22 +342,22 @@ export class UI {
     setTimeout(() => {
       // 2. Pulse (Click)
       cursor.style.transform = 'scale(1.3)';
-      
+
       setTimeout(() => {
         // 3. Drag to bottom-right precisely
         let startTime = null;
         const duration = 1500;
-        
+
         const animateDrag = (time) => {
           if (!startTime) startTime = time;
           const progress = Math.min((time - startTime) / duration, 1.0);
-          
+
           const currentW = endW * progress;
           const currentH = endH * progress;
-          
+
           rect.setAttribute('width', currentW);
           rect.setAttribute('height', currentH);
-          
+
           // Force exact bottom-right alignment
           const targetX = startX + currentW;
           const targetY = startY + currentH;
@@ -379,13 +383,26 @@ export class UI {
   syncUI() {
     const playIcon = document.getElementById('play-icon');
     const pauseIcon = document.getElementById('pause-icon');
-    
+
     if (this.state.running) {
       playIcon.style.display = 'none';
       pauseIcon.style.display = 'block';
     } else {
       playIcon.style.display = 'block';
       pauseIcon.style.display = 'none';
+    }
+
+    // Toggle Night Mode Icons and Body Class
+    const sunIcon = document.getElementById('sun-icon');
+    const moonIcon = document.getElementById('moon-icon');
+    if (this.state.nightMode) {
+      document.body.classList.add('night-mode');
+      sunIcon.style.display = 'none';
+      moonIcon.style.display = 'block';
+    } else {
+      document.body.classList.remove('night-mode');
+      sunIcon.style.display = 'block';
+      moonIcon.style.display = 'none';
     }
   }
 }

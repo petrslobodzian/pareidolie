@@ -16,6 +16,7 @@ export const state = {
   cloudDensity: 0.8,
   windX: 0.05,
   windY: 0.05,
+  nightMode: false,
   annotations: [],
 
   // Listeners for state changes
@@ -32,7 +33,7 @@ export const state = {
 
     // Update URL with all persistent parameters
     const url = new URL(window.location);
-    const params = ['seed', 'noiseScale', 'noiseOctaves', 'contrast', 'speed', 'biasStrength', 'rawMode', 'cloudCoverage', 'cloudDensity', 'windX', 'windY'];
+    const params = ['seed', 'noiseScale', 'noiseOctaves', 'contrast', 'speed', 'biasStrength', 'rawMode', 'cloudCoverage', 'cloudDensity', 'windX', 'windY', 'nightMode'];
     params.forEach(p => {
       if (this[p] !== undefined) {
         url.searchParams.set(p, this[p]);
@@ -88,7 +89,7 @@ Object.entries(paramsMap).forEach(([stateKey, urlKey]) => {
   const val = urlParams.get(urlKey);
   if (val !== null) {
     if (stateKey === 'seed') state[stateKey] = val;
-    else if (stateKey === 'rawMode') state[stateKey] = val === 'true';
+    else if (stateKey === 'rawMode' || stateKey === 'nightMode') state[stateKey] = val === 'true';
     else state[stateKey] = parseFloat(val);
   }
 });

@@ -16,6 +16,38 @@
   --font-heading: 'Outfit', sans-serif;
 }
 
+body.night-mode {
+  --sky-top: #000000;
+  --sky-bot: #000000;
+  --surface: rgba(30, 30, 35, 0.9);
+  --text: #ffffff;
+  --text-muted: #a0a0b0;
+  --accent: #14B2E0;
+  --shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+}
+
+body.night-mode .play-btn {
+  color: #1a1a1a;
+}
+
+body.night-mode .icon-btn {
+  opacity: 0.4;
+}
+
+body.night-mode .icon-btn:hover {
+  opacity: 1;
+  background: #ffffff;
+  color: #1a1a1a;
+}
+
+body.night-mode .wind-btn {
+  opacity: 0.5;
+}
+
+body.night-mode .wind-btn:hover {
+  opacity: 1;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -58,6 +90,13 @@ canvas {
 .top-nav {
   position: absolute;
   top: 32px;
+  right: 32px;
+  z-index: 100;
+}
+
+.bottom-right-nav {
+  position: absolute;
+  bottom: 32px;
   right: 32px;
   z-index: 100;
 }
@@ -109,7 +148,7 @@ canvas {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  color: var(--sky-top);
+  color: var(--text);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -129,7 +168,7 @@ canvas {
   width: 88px;
   height: 88px;
   border-radius: 50%;
-  color: var(--sky-top);
+  color: var(--text);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -234,7 +273,7 @@ canvas {
   font-family: var(--font-heading);
   font-size: 2rem;
   font-weight: 700;
-  color: var(--sky-top);
+  color: var(--text);
   text-align: center;
 }
 
@@ -297,7 +336,7 @@ canvas {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  color: var(--sky-top);
+  color: var(--text);
   cursor: pointer;
   display: flex;
   align-items: center;
