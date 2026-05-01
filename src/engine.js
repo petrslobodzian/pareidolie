@@ -37,7 +37,9 @@ export class VisualEngine {
       uCloudDensity: { value: this.state.cloudDensity },
       uRawMode: { value: this.state.rawMode },
       uNightMode: { value: this.state.nightMode },
-      uOffset: { value: new THREE.Vector2(0, 0) }
+      uBottomPerspective: { value: this.state.bottomPerspective },
+      uOffset: { value: new THREE.Vector2(0, 0) },
+      uCameraOffset: { value: new THREE.Vector2(0, 0) }
     };
   }
 
@@ -64,7 +66,9 @@ export class VisualEngine {
       uniform float uCloudDensity;
       uniform bool uRawMode;
       uniform bool uNightMode;
+      uniform bool uBottomPerspective;
       uniform vec2 uOffset;
+      uniform vec2 uCameraOffset;
       varying vec2 vUv;
 
       #define UI0 1597334673U
@@ -181,25 +185,18 @@ export class VisualEngine {
 
       void main() {
         vec2 uv = vUv;
-        float horizonLine = 0.20;
-        float dist = uv.y - horizonLine;
-        
         float finalV = 0.0;
-        if (dist > 0.0) {
-          float normDist = dist / (1.0 - horizonLine);
-          float perspective = mix(0.25, 1.0, normDist); 
-          vec2 p = vec2((uv.x - 0.5) / perspective + 0.5, 1.0 / (0.15 + dist * 1.5));
-          
-          // --- HALF WIDTH SQUEEZE ---
-          // Multiply X by 2.0 to make the patterns half as wide
+        
+        if (uBottomPerspective) {
+          vec2 p = uv;
+          // Scale to fit visually
           p.x *= 2.0;
-
           vec3 seedOffset = vec3(uSeed * 100.0, uSeed * 200.0, uSeed * 300.0);
 
           for(int i=0; i<6; i++) {
             float heightOffset = float(i) * 0.04;
-            vec2 pTilted = p - vec2(0.0, heightOffset * (p.y - 1.0));
-            vec3 p3 = vec3(pTilted * uNoiseScale * 1.5 - uOffset, uTime * 0.01 + heightOffset) + seedOffset;
+            vec2 pTilted = p; 
+            vec3 p3 = vec3(pTilted * uNoiseScale * 1.5 - uOffset - uCameraOffset, uTime * 0.01 + heightOffset) + seedOffset;
             
             float cloud = getCloudDensity(p3);
             
@@ -212,8 +209,40 @@ export class VisualEngine {
             float layerV = pow(clamp((cloud - 0.5) * uContrast + 0.5, 0.0, 1.0), power);
             finalV = max(finalV, layerV);
           }
+        } else {
+          float horizonLine = 0.20;
+          float dist = uv.y - horizonLine;
           
-          finalV *= smoothstep(0.0, 0.1, dist);
+          if (dist > 0.0) {
+            float normDist = dist / (1.0 - horizonLine);
+            float perspective = mix(0.25, 1.0, normDist); 
+            vec2 p = vec2((uv.x - 0.5) / perspective + 0.5, 1.0 / (0.15 + dist * 1.5));
+            
+            // --- HALF WIDTH SQUEEZE ---
+            // Multiply X by 2.0 to make the patterns half as wide
+            p.x *= 2.0;
+
+            vec3 seedOffset = vec3(uSeed * 100.0, uSeed * 200.0, uSeed * 300.0);
+
+            for(int i=0; i<6; i++) {
+              float heightOffset = float(i) * 0.04;
+              vec2 pTilted = p - vec2(0.0, heightOffset * (p.y - 1.0));
+              vec3 p3 = vec3(pTilted * uNoiseScale * 1.5 - uOffset - uCameraOffset, uTime * 0.01 + heightOffset) + seedOffset;
+              
+              float cloud = getCloudDensity(p3);
+              
+              if (!uRawMode) {
+                float b = getBias(uv, uSeed);
+                cloud = clamp(cloud - b * uBiasStrength * 0.5, 0.0, 1.0);
+              }
+
+              float power = uNightMode ? 0.8 : 1.5;
+              float layerV = pow(clamp((cloud - 0.5) * uContrast + 0.5, 0.0, 1.0), power);
+              finalV = max(finalV, layerV);
+            }
+            
+            finalV *= smoothstep(0.0, 0.1, dist);
+          }
         }
 
         vec3 skyTop = uNightMode ? vec3(0.0) : vec3(0.02, 0.05, 0.15);
@@ -267,6 +296,7 @@ export class VisualEngine {
       this.uniforms.uCloudDensity.value = s.cloudDensity;
       this.uniforms.uRawMode.value = s.rawMode;
       this.uniforms.uNightMode.value = s.nightMode;
+      this.uniforms.uBottomPerspective.value = s.bottomPerspective;
     });
   }
 
@@ -286,6 +316,11 @@ export class VisualEngine {
     link.download = `pareidolia-${this.state.seed}.png`;
     link.href = dataUrl;
     link.click();
+  }
+
+  pan(x, y) {
+    this.uniforms.uCameraOffset.value.x += x;
+    this.uniforms.uCameraOffset.value.y += y;
   }
 
   getPixelData(x, y, width, height) {

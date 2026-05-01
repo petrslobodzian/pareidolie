@@ -18,24 +18,28 @@ export class UI {
   }
 
   initControls() {
-    document.getElementById('random-seed').addEventListener('click', () => {
+    document.getElementById('generate-clouds').addEventListener('click', () => {
       this.state.randomizeSeed();
     });
 
-    document.getElementById('play-pause').addEventListener('click', () => {
+    document.getElementById('run-pause').addEventListener('click', () => {
       this.state.update({ running: !this.state.running });
     });
 
-    document.getElementById('snapshot').addEventListener('click', () => {
-      this.engine.snapshot();
+    const windPopover = document.getElementById('wind-popover');
+    document.getElementById('wind-direction-toggle').addEventListener('click', (e) => {
+      e.stopPropagation();
+      windPopover.style.display = windPopover.style.display === 'none' ? 'block' : 'none';
     });
 
-    document.getElementById('night-mode-toggle').addEventListener('click', () => {
-      this.state.update({ nightMode: !this.state.nightMode });
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.popover-wrapper')) {
+        windPopover.style.display = 'none';
+      }
     });
 
-    document.getElementById('help-btn').addEventListener('click', () => {
-      this.runTutorial();
+    document.getElementById('wind-flow').addEventListener('click', () => {
+      this.state.update({ bottomPerspective: !this.state.bottomPerspective });
     });
 
     // Wind Controls
@@ -50,6 +54,84 @@ export class UI {
     });
     document.getElementById('wind-right').addEventListener('click', () => {
       this.state.update({ windX: -0.1, windY: 0.0 });
+    });
+
+    document.getElementById('fullscreen-btn').addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+          console.warn(`Error attempting to enable fullscreen: ${err.message}`);
+        });
+      } else {
+        document.exitFullscreen();
+      }
+    });
+    
+    // Settings modal toggle
+    const settingsModal = document.getElementById('settings-modal');
+    document.getElementById('settings-btn').addEventListener('click', () => {
+      settingsModal.style.display = 'flex';
+      this.syncSliders();
+    });
+    document.getElementById('settings-close').addEventListener('click', () => {
+      settingsModal.style.display = 'none';
+    });
+    document.getElementById('settings-close-x').addEventListener('click', () => {
+      settingsModal.style.display = 'none';
+    });
+
+    // Sliders
+    const sliders = [
+      { id: 'slider-noise', key: 'noiseScale' },
+      { id: 'slider-octaves', key: 'noiseOctaves' },
+      { id: 'slider-coverage', key: 'cloudCoverage' },
+      { id: 'slider-density', key: 'cloudDensity' },
+      { id: 'slider-contrast', key: 'contrast' },
+      { id: 'slider-speed', key: 'speed' }
+    ];
+
+    sliders.forEach(({ id, key }) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('input', (e) => {
+          this.state.update({ [key]: parseFloat(e.target.value) });
+        });
+      }
+    });
+
+    document.getElementById('night-mode-toggle').addEventListener('change', (e) => {
+      this.state.update({ nightMode: e.target.checked });
+    });
+
+    document.getElementById('help-btn').addEventListener('click', () => {
+      settingsModal.style.display = 'none';
+      this.runTutorial();
+    });
+
+    const helpBtnTop = document.getElementById('help-btn-top');
+    if (helpBtnTop) {
+      helpBtnTop.addEventListener('click', () => {
+        this.runTutorial();
+      });
+    }
+  }
+
+  syncSliders() {
+    const map = {
+      'noiseScale': { slider: 'slider-noise', val: 'val-noise' },
+      'noiseOctaves': { slider: 'slider-octaves', val: 'val-octaves' },
+      'cloudCoverage': { slider: 'slider-coverage', val: 'val-coverage' },
+      'cloudDensity': { slider: 'slider-density', val: 'val-density' },
+      'contrast': { slider: 'slider-contrast', val: 'val-contrast' },
+      'speed': { slider: 'slider-speed', val: 'val-speed' }
+    };
+    
+    Object.entries(map).forEach(([key, ids]) => {
+      const sliderEl = document.getElementById(ids.slider);
+      const valEl = document.getElementById(ids.val);
+      if (sliderEl && valEl) {
+        sliderEl.value = this.state[key];
+        valEl.innerText = this.state[key].toFixed(2);
+      }
     });
   }
 
@@ -381,28 +463,36 @@ export class UI {
   }
 
   syncUI() {
-    const playIcon = document.getElementById('play-icon');
-    const pauseIcon = document.getElementById('pause-icon');
+    this.syncSliders();
 
-    if (this.state.running) {
-      playIcon.style.display = 'none';
-      pauseIcon.style.display = 'block';
-    } else {
-      playIcon.style.display = 'block';
-      pauseIcon.style.display = 'none';
+    const runPauseSvg = document.getElementById('run-pause-svg');
+    if (runPauseSvg) {
+      if (this.state.running) {
+        runPauseSvg.innerHTML = `
+          <rect x="6" y="4" width="4" height="16" fill="currentColor"></rect>
+          <rect x="14" y="4" width="4" height="16" fill="currentColor"></rect>
+        `;
+      } else {
+        runPauseSvg.innerHTML = `
+          <polygon points="5 3 19 12 5 21 5 3" fill="currentColor"></polygon>
+        `;
+      }
     }
 
-    // Toggle Night Mode Icons and Body Class
-    const sunIcon = document.getElementById('sun-icon');
-    const moonIcon = document.getElementById('moon-icon');
+    const nightModeToggle = document.getElementById('night-mode-toggle');
+    if (nightModeToggle) {
+      nightModeToggle.checked = this.state.nightMode;
+    }
+
     if (this.state.nightMode) {
       document.body.classList.add('night-mode');
-      sunIcon.style.display = 'none';
-      moonIcon.style.display = 'block';
     } else {
       document.body.classList.remove('night-mode');
-      sunIcon.style.display = 'block';
-      moonIcon.style.display = 'none';
+    }
+    
+    const windFlowBtn = document.getElementById('wind-flow');
+    if (windFlowBtn) {
+      windFlowBtn.style.opacity = this.state.bottomPerspective ? '1' : '0.6';
     }
   }
 }
