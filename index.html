@@ -154,10 +154,19 @@
             </div>
           </div>
         </div>
-        <div class="modal-footer">
+        <div class="modal-footer" style="flex-direction: column;">
           <input type="text" id="discovery-name" placeholder="Name this discovery..." class="dark-input">
-          <div class="modal-actions">
+          
+          <div id="ai-match-container" style="display: none; width: 100%; margin-top: 12px; align-items: center; gap: 12px;">
+            <div style="flex-grow: 1; background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px; overflow: hidden; position: relative;">
+               <div id="ai-match-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #14B2E0, #03486B); transition: width 0.5s ease;"></div>
+            </div>
+            <span id="ai-match-score" style="font-weight: 600; font-family: monospace; min-width: 60px; text-align: right; color: var(--accent);">--%</span>
+          </div>
+
+          <div class="modal-actions" style="margin-top: 16px; width: 100%; justify-content: flex-end;">
             <button class="modal-btn cancel" id="close-modal">Discard</button>
+            <button class="modal-btn cancel" id="analyze-match">Analyze Match</button>
             <button class="modal-btn save" id="save-discovery">Save Findings</button>
           </div>
         </div>
@@ -237,7 +246,7 @@
   </main>
 
   <!-- Modular App Entry -->
-  <script type="module" src="src/main.js"></script>
+  <script type="module" src="src/main.js?v=2"></script>
 </body>
 
 </html>

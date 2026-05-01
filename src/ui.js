@@ -4,9 +4,10 @@
 import { generateDiscoverySVG } from './geometry.js';
 
 export class UI {
-  constructor(state, engine) {
+  constructor(state, engine, ai) {
     this.state = state;
     this.engine = engine;
+    this.ai = ai;
     this.pendingDiscovery = null;
 
     this.initControls();
@@ -196,10 +197,18 @@ export class UI {
     const threshInc = document.getElementById('threshold-inc');
     const threshDec = document.getElementById('threshold-dec');
     const closeX = document.getElementById('modal-close-x');
+    
+    const analyzeBtn = document.getElementById('analyze-match');
+    const aiMatchContainer = document.getElementById('ai-match-container');
+    const aiMatchBar = document.getElementById('ai-match-bar');
+    const aiMatchScore = document.getElementById('ai-match-score');
 
     const closeAll = () => {
       modal.style.display = 'none';
       this.pendingDiscovery = null;
+      aiMatchContainer.style.display = 'none';
+      aiMatchBar.style.width = '0%';
+      aiMatchScore.innerText = '--%';
     };
 
     closeBtn.onclick = closeAll;
@@ -227,6 +236,40 @@ export class UI {
       if (!this.pendingDiscovery) return;
       this.pendingDiscovery.threshold = Math.min(0.9, this.pendingDiscovery.threshold + 0.05);
       this.updateModalViews();
+    };
+
+    analyzeBtn.onclick = async () => {
+      if (!this.pendingDiscovery) return;
+      const label = nameInput.value.trim();
+      if (!label) {
+        alert("Please enter a name first!");
+        return;
+      }
+      
+      aiMatchContainer.style.display = 'flex';
+      aiMatchScore.innerText = '...';
+      aiMatchBar.style.width = '0%';
+      analyzeBtn.innerText = 'Analyzing...';
+      analyzeBtn.disabled = true;
+
+      try {
+        // Change text based on AI status
+        if (this.ai.status === 'initializing') {
+            aiMatchScore.innerText = 'Loading AI...';
+            // Wait for model to load
+            await new Promise(resolve => this.ai.onReady(resolve));
+        }
+
+        const score = await this.ai.analyzeMatch(this.pendingDiscovery.originalDataURL, label);
+        aiMatchBar.style.width = `${score}%`;
+        aiMatchScore.innerText = `${score}%`;
+      } catch (e) {
+        aiMatchScore.innerText = e.message || 'Err';
+        console.error("Analysis error:", e);
+      } finally {
+        analyzeBtn.innerText = 'Analyze Match';
+        analyzeBtn.disabled = false;
+      }
     };
 
     nameInput.onkeydown = (e) => {
