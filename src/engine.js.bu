@@ -12,18 +12,15 @@ export class VisualEngine {
 
     this.scene = new THREE.Scene();
     this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-    this.renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, preserveDrawingBuffer: false });
+    this.renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, preserveDrawingBuffer: true });
 
-    // Cap pixel ratio at 2 — going beyond that doubles GPU load with minimal visual gain
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(container.clientWidth, container.clientHeight);
     container.appendChild(this.renderer.domElement);
 
     this.initUniforms();
     this.setupShader();
     this.setupEvents();
-    this._boundAnimate = this.animate.bind(this); // bind once, not every frame
-    this._dirty = true; // render at least one frame on init
     this.animate();
   }
 
@@ -292,9 +289,7 @@ export class VisualEngine {
   setupEvents() {
     window.addEventListener('resize', () => {
       this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
-      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       this.uniforms.uResolution.value.set(this.container.clientWidth, this.container.clientHeight);
-      this._dirty = true;
     });
 
     this.state.subscribe((s) => {
@@ -308,28 +303,20 @@ export class VisualEngine {
       this.uniforms.uRawMode.value = s.rawMode;
       this.uniforms.uNightMode.value = s.nightMode;
       this.uniforms.uBottomPerspective.value = s.bottomPerspective;
-      this._dirty = true; // always re-render when settings change
     });
   }
 
   animate(time) {
-    requestAnimationFrame(this._boundAnimate);
+    requestAnimationFrame(this.animate.bind(this));
     if (this.state.running) {
       this.uniforms.uTime.value += 0.01;
       this.uniforms.uOffset.value.x += this.state.windX * this.state.speed * 0.1;
       this.uniforms.uOffset.value.y += this.state.windY * this.state.speed * 0.1;
-      this._dirty = true;
     }
-    // Only render when there's something new to show
-    if (this._dirty) {
-      this.renderer.render(this.scene, this.camera);
-      this._dirty = false;
-    }
+    this.renderer.render(this.scene, this.camera);
   }
 
   snapshot() {
-    // Re-render once with preserveDrawingBuffer to capture the frame
-    this.renderer.render(this.scene, this.camera);
     const dataUrl = this.renderer.domElement.toDataURL('image/png');
     const link = document.createElement('a');
     link.download = `pareidolia-${this.state.seed}.png`;

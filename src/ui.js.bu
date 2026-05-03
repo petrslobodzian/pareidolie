@@ -16,15 +16,7 @@ export class UI {
     this.initModal();
     this.syncUI();
 
-    // Throttle UI syncs triggered by state changes (e.g. slider drags fire many times/sec)
-    let syncTimer = null;
-    this.state.subscribe(() => {
-      if (syncTimer) return;
-      syncTimer = requestAnimationFrame(() => {
-        syncTimer = null;
-        this.syncUI();
-      });
-    });
+    this.state.subscribe(() => this.syncUI());
   }
 
   initControls() {

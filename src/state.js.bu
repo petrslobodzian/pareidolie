@@ -23,22 +23,6 @@ export const state = {
   // Listeners for state changes
   listeners: new Set(),
 
-  // Throttled URL update — avoids history.replaceState jank during slider drags
-  _scheduleUrlUpdate() {
-    if (this._urlUpdateTimer) return;
-    this._urlUpdateTimer = setTimeout(() => {
-      this._urlUpdateTimer = null;
-      const url = new URL(window.location);
-      const params = ['seed', 'noiseScale', 'noiseOctaves', 'contrast', 'speed', 'biasStrength', 'rawMode', 'cloudCoverage', 'cloudDensity', 'windX', 'windY', 'nightMode', 'bottomPerspective'];
-      params.forEach(p => {
-        if (this[p] !== undefined) {
-          url.searchParams.set(p, this[p]);
-        }
-      });
-      window.history.replaceState({}, '', url);
-    }, 200);
-  },
-
   update(payload) {
     Object.assign(this, payload);
     this.notify();
@@ -48,7 +32,15 @@ export const state = {
       this.saveAnnotations();
     }
 
-    this._scheduleUrlUpdate();
+    // Update URL with all persistent parameters
+    const url = new URL(window.location);
+    const params = ['seed', 'noiseScale', 'noiseOctaves', 'contrast', 'speed', 'biasStrength', 'rawMode', 'cloudCoverage', 'cloudDensity', 'windX', 'windY', 'nightMode', 'bottomPerspective'];
+    params.forEach(p => {
+      if (this[p] !== undefined) {
+        url.searchParams.set(p, this[p]);
+      }
+    });
+    window.history.replaceState({}, '', url);
   },
 
   subscribe(callback) {
