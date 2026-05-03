@@ -172,6 +172,10 @@ canvas {
   transition: all 0.2s ease;
 }
 
+.control-btn.wide {
+  width: 120px;
+}
+
 .control-btn:hover {
   background: rgba(255, 255, 255, 0.1);
   transform: translateY(-2px);

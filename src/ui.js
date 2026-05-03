@@ -2,6 +2,7 @@
  * UI & Annotation System for Pareidolia Lab
  */
 import { generateDiscoverySVG } from './geometry.js';
+import { t } from './i18n.js';
 
 export class UI {
   constructor(state, engine, ai) {
@@ -192,6 +193,7 @@ export class UI {
     const modal = document.getElementById('discovery-modal');
     const closeBtn = document.getElementById('close-modal');
     const saveBtn = document.getElementById('save-discovery');
+    const printBtn = document.getElementById('print-discovery');
     const rotateBtn = document.getElementById('rotate-left');
     const nameInput = document.getElementById('discovery-name');
     const threshInc = document.getElementById('threshold-inc');
@@ -215,8 +217,14 @@ export class UI {
     closeX.onclick = closeAll;
 
     saveBtn.onclick = () => {
-      const label = nameInput.value || 'Unnamed Discovery';
+      const label = nameInput.value || t('unnamedDiscovery');
       this.saveDiscovery(label);
+      closeAll();
+    };
+
+    printBtn.onclick = () => {
+      const label = nameInput.value || t('unnamedDiscovery');
+      this.printDiscovery(label);
       closeAll();
     };
 
@@ -242,20 +250,20 @@ export class UI {
       if (!this.pendingDiscovery) return;
       const label = nameInput.value.trim();
       if (!label) {
-        alert("Please enter a name first!");
+        alert(t('enterNameFirst'));
         return;
       }
       
       aiMatchContainer.style.display = 'flex';
       aiMatchScore.innerText = '...';
       aiMatchBar.style.width = '0%';
-      analyzeBtn.innerText = 'Analyzing...';
+      analyzeBtn.innerText = t('analyzing');
       analyzeBtn.disabled = true;
 
       try {
         // Change text based on AI status
         if (this.ai.status === 'initializing') {
-            aiMatchScore.innerText = 'Loading AI...';
+            aiMatchScore.innerText = t('loadingAi');
             // Wait for model to load
             await new Promise(resolve => this.ai.onReady(resolve));
         }
@@ -267,7 +275,7 @@ export class UI {
         aiMatchScore.innerText = e.message || 'Err';
         console.error("Analysis error:", e);
       } finally {
-        analyzeBtn.innerText = 'Analyze Match';
+        analyzeBtn.innerText = t('analyzeMatch');
         analyzeBtn.disabled = false;
       }
     };
@@ -297,22 +305,22 @@ export class UI {
     this.updateModalViews();
 
     // Reset Input
-    nameInput.value = isTutorial ? 'Your Discovery' : '';
+    nameInput.value = isTutorial ? t('yourDiscovery') : '';
     modal.style.display = 'flex';
     nameInput.focus();
 
     // Reset Header
-    header.innerText = 'New Discovery';
+    header.innerText = t('newDiscovery');
 
     // Auto-close and Countdown if tutorial
     if (isTutorial) {
       let count = 3;
-      header.innerText = `Demo will close in ${count}...`;
+      header.innerText = `${t('demoWillClose')} ${count}...`;
 
       const countdown = setInterval(() => {
         count--;
         if (count > 0) {
-          header.innerText = `Demo will close in ${count}...`;
+          header.innerText = `${t('demoWillClose')} ${count}...`;
         } else {
           clearInterval(countdown);
         }
@@ -354,6 +362,131 @@ export class UI {
     this.downloadDiscoveryReport(originalDataURL, contourSVG, label, rotation);
 
     this.pendingDiscovery = null;
+  }
+
+  printDiscovery(label) {
+    if (!this.pendingDiscovery) return;
+    const { rect, pixelData, rotation, threshold, originalDataURL } = this.pendingDiscovery;
+
+    // Generate the final contour SVG for the composite
+    const contourSVG = generateDiscoverySVG(pixelData, label, rect.width, rect.height, rotation, threshold);
+
+    // Print the A4 Report directly
+    this.printDiscoveryReport(originalDataURL, contourSVG, label, rotation);
+
+    this.pendingDiscovery = null;
+  }
+
+  async printDiscoveryReport(originalURL, contourSVG, label, rotation) {
+    // A4 Landscape at 300 DPI
+    const W = 3508;
+    const H = 2480;
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    // 1. Background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, W, H);
+
+    // 2. Load Images
+    const [imgOriginal, imgContour] = await Promise.all([
+      this.loadImage(originalURL),
+      this.loadSVGImage(contourSVG)
+    ]);
+
+    // 3. Layout Calculations
+    const margin = 200;
+    const innerW = W - margin * 2;
+    const innerH = H - margin * 3; // Extra space for text at bottom
+    const boxW = (innerW - 100) / 2;
+    const boxH = innerH;
+
+    // 4. Draw Original (Left)
+    ctx.save();
+    const centerX = margin + boxW / 2;
+    const centerY = margin + boxH / 2;
+    ctx.translate(centerX, centerY);
+    ctx.rotate((rotation * Math.PI) / 180);
+
+    const scaleO = Math.min(boxW / imgOriginal.width, boxH / imgOriginal.height);
+    const dwo = imgOriginal.width * scaleO;
+    const dho = imgOriginal.height * scaleO;
+    ctx.drawImage(imgOriginal, -dwo / 2, -dho / 2, dwo, dho);
+    ctx.restore();
+
+    // 5. Draw Contour (Right)
+    const contourX = margin + boxW + 100;
+    const scaleC = Math.min(boxW / imgContour.width, boxH / imgContour.height);
+    const dwc = imgContour.width * scaleC;
+    const dhc = imgContour.height * scaleC;
+    ctx.drawImage(imgContour, contourX + (boxW - dwc) / 2, margin + (boxH - dhc) / 2, dwc, dhc);
+
+    // 6. Draw Label (Bottom Center)
+    ctx.fillStyle = '#03486B';
+    ctx.font = 'bold 80px "Outfit", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(label.toUpperCase(), W / 2, H - 150);
+
+    // 7. Print
+    const dataURL = canvas.toDataURL('image/png');
+    
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(`
+      <html>
+        <head>
+          <title>Print - ${label}</title>
+          <style>
+            @page {
+              size: landscape;
+              margin: 0;
+            }
+            body {
+              margin: 0;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              height: 100vh;
+              background: white;
+            }
+            img {
+              max-width: 100%;
+              max-height: 100%;
+              object-fit: contain;
+            }
+          </style>
+        </head>
+        <body>
+          <img src="${dataURL}" />
+          <script>
+            window.onload = () => {
+              setTimeout(() => {
+                window.print();
+              }, 100);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    doc.close();
+
+    // Clean up
+    setTimeout(() => {
+      if (document.body.contains(iframe)) {
+        document.body.removeChild(iframe);
+      }
+    }, 10000);
   }
 
   async downloadDiscoveryReport(originalURL, contourSVG, label, rotation) {

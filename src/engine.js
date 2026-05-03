@@ -12,7 +12,7 @@ export class VisualEngine {
 
     this.scene = new THREE.Scene();
     this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+    this.renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, preserveDrawingBuffer: true });
 
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(container.clientWidth, container.clientHeight);
@@ -115,14 +115,14 @@ export class VisualEngine {
       float worleyNoise(vec3 uv) {    
         vec3 id = floor(uv);
         vec3 p = fract(uv);
+        vec3 offsetBase = step(vec3(0.5), p) - vec3(1.0);
         float minDist = 10.0;
-        for (float x = -1.; x <= 1.; ++x) {
-          for(float y = -1.; y <= 1.; ++y) {
-            for(float z = -1.; z <= 1.; ++z) {
-              vec3 offset = vec3(x, y, z);
+        for (float x = 0.; x <= 1.; ++x) {
+          for(float y = 0.; y <= 1.; ++y) {
+            for(float z = 0.; z <= 1.; ++z) {
+              vec3 offset = offsetBase + vec3(x, y, z);
               vec3 h = hash33(id + offset) * .5 + .5;
-              h += offset;
-              vec3 d = p - h;
+              vec3 d = p - (offset + h);
               minDist = min(minDist, dot(d, d));
             }
           }
@@ -193,6 +193,9 @@ export class VisualEngine {
           p.x *= 2.0;
           vec3 seedOffset = vec3(uSeed * 100.0, uSeed * 200.0, uSeed * 300.0);
 
+          float b = 0.0;
+          if (!uRawMode) b = getBias(uv, uSeed);
+
           for(int i=0; i<6; i++) {
             float heightOffset = float(i) * 0.04;
             vec2 pTilted = p; 
@@ -201,13 +204,13 @@ export class VisualEngine {
             float cloud = getCloudDensity(p3);
             
             if (!uRawMode) {
-              float b = getBias(uv, uSeed);
               cloud = clamp(cloud - b * uBiasStrength * 0.5, 0.0, 1.0);
             }
 
             float power = uNightMode ? 0.8 : 1.5;
             float layerV = pow(clamp((cloud - 0.5) * uContrast + 0.5, 0.0, 1.0), power);
             finalV = max(finalV, layerV);
+            if (finalV > 0.99) break;
           }
         } else {
           float horizonLine = 0.20;
@@ -224,6 +227,9 @@ export class VisualEngine {
 
             vec3 seedOffset = vec3(uSeed * 100.0, uSeed * 200.0, uSeed * 300.0);
 
+            float b = 0.0;
+            if (!uRawMode) b = getBias(uv, uSeed);
+
             for(int i=0; i<6; i++) {
               float heightOffset = float(i) * 0.04;
               vec2 pTilted = p - vec2(0.0, heightOffset * (p.y - 1.0));
@@ -232,13 +238,13 @@ export class VisualEngine {
               float cloud = getCloudDensity(p3);
               
               if (!uRawMode) {
-                float b = getBias(uv, uSeed);
                 cloud = clamp(cloud - b * uBiasStrength * 0.5, 0.0, 1.0);
               }
 
               float power = uNightMode ? 0.8 : 1.5;
               float layerV = pow(clamp((cloud - 0.5) * uContrast + 0.5, 0.0, 1.0), power);
               finalV = max(finalV, layerV);
+              if (finalV > 0.99) break;
             }
             
             finalV *= smoothstep(0.0, 0.1, dist);
